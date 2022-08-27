@@ -1,8 +1,9 @@
+import sys
 import pandas as pd
 import os
 import timeit
 import time
-from datetime import datetime
+from datetime import date, datetime
 from datetime import timedelta
 from loguru import logger
 import numpy as np
@@ -10,12 +11,21 @@ import numpy as np
 class Preencher_Carga:
 
     def __init__(self) -> None:
+        logger.success('Iniciando...')
+        self.inicio = timeit.default_timer()
+
         self.bases = os.getcwd() + "\\Base\\"
         self.nomeArquivo = ['CARTEIRA', 'Fechamento', 'Frota', 'Lista', 'A2J315']
-        self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos = self.listar_bases(self.bases, self.nomeArquivo)
+
+        try:
+            self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos = self.listar_bases(self.bases, self.nomeArquivo)
+        except Exception as e:
+            logger.error('Falha em obter dados >> %s' % str(e))
+            self.sair()
+
         self.destino = os.getcwd() + "\\Resultado\\"
 
-    def exemple(self):
+    def exemple():
         # rename_dict = {'Cd': 'Filial', 'Item': 'SKU', 'Desc': 'Descrição', 'Aisl': 'Rua', 'Bloc': 'Blocagem', 'Nv': 'Nivel',
         #             'Qqp': 'Equip', 'eq': 'Qtd Max', 'Sts': 'Status', 'Cub': 'Cub Uni', 'Cub Qtd': 'Cub total',
         #             'END': 'Eqp/End', 'Cub Eqp': 'Cub Palet', '%Ocupação Palet': '% Ocupação Palet'}
@@ -28,30 +38,20 @@ class Preencher_Carga:
         # df[['Cd', 'Comp', 'Item']] = df['Cd    Comp  Item'].str.split('  ', expand=True)
         # df_carteira.to_excel(self.destino + 'Base_carteira.xlsx', index=False)
         
-        # df[['Desc']] = ['--']
-        # df[['Cub Qtd', 'Cub Eqp']] = ['-', '-']
-        # df = df.astype({'Setor': int}, errors='ignore')
         # df['Item'].fillna('-', inplace=True)
-
-        # empty_sku_remove = df.loc[(df['Item'].str.startswith('-'))]
 
         # remove_filiais = df.loc[
         #     (df['Cd'].str.startswith(('0125', '1088', '1445', '1475', '1522', '1668', '1760', '1850', '1876',
         #                             '1888', '3200')))]
 
-        # df.drop(empty_sku_remove.index, axis=0, inplace=True, errors='ignore')
         # df.drop(remove_filiais.index, axis=0, inplace=True, errors='ignore')
 
-        # altera_coluna = {'Cub': float, 'Cub Qtd': float, 'Cub Eqp': float, 'Cd': int, 'Item': int, 'Aisl': str, 'Bloc': str,
-        #                 'Nv': str, 'Qtd': int, 'eq': int, 'END': int}
-
-        # self.alterarTipo(df, altera_coluna)
-        # df['Cub Palet'] = df['Cub Uni'] * df['Eqp/End'] * df['Qtd Max']
         # df.replace({'Cd': {'0014': '1401'}}, inplace=True)
 
         # print("Hello to the {} {}".format(var2,var1))
         # print("Hello to the %s %d " %(var2,var1))
         # print('Hello to the {} {}' + var2 + str(var1))
+
         # def my_fun(x, var1, var3):
         #     print (x)
         #     if x[var1] > 0 :
@@ -69,20 +69,8 @@ class Preencher_Carga:
         #         return 'tablet' 
         #     else:
         #         return 'other'
-
+        # 
         # df['combo'] = df.apply(func, axis=1)
-
-        # conditions = [
-        #     (df_carteira['PEDIDO DE VENDA'] > 0), 
-        #     (df_carteira['SETOR'] >= 60),
-        #     (df_carteira['PEDIDO DE VENDA'] >= 70) & (df_carteira['PEDIDO DE VENDA'] < 80),
-        #     (df_carteira['PEDIDO DE VENDA'] >= 80) & (df_carteira['PEDIDO DE VENDA'] < 90),
-        #     (df_carteira['PEDIDO DE VENDA'] >= 90)
-        #     ]
-
-        # letters = ['0.PV', 'd', 'c', 'b', 'a']
-
-        # df_carteira['PRIORIDADE'] = np.select(conditions, letters)
         
         # df['combo'] = np.select([df.mobile == 'mobile', df.tablet == 'tablet'], 
         #                         ['mobile', 'tablet'], 
@@ -99,18 +87,32 @@ class Preencher_Carga:
         #         return 'other'
 
         # df_carteira['PRIORIDADE'] = df_carteira.apply(func, axis=1)
+        # data_limite = datetime.strptime(data, '%d.%m.%Y').date()
         pass
     
-    def start(self):
-        logger.success('Iniciando...')
-        inicio = timeit.default_timer()
+    def sair(self):
+        fim = timeit.default_timer()
+        logger.critical('Finalizado... %ds' %(fim - self.inicio))
+        sys.exit()
 
-        df_carteira = self.dados_carteira()
-        df_fechamento, df_frota, df_suprimentos = self.dados_auxiliar()
+    def start(self):
+
+        try:
+            df_carteira = self.dados_carteira()
+        except Exception as e:
+            logger.warning('Falha em obter dados da Carteira >> %s' % str(e))
+            self.sair
+            
+        try:    
+            df_fechamento, df_frota, df_suprimentos = self.dados_auxiliar()
+        except Exception as e:
+            logger.warning('Falha em obter dados auxiliares >> %s' % str(e))
+            self.sair
+
         self.tratar_dados(df_carteira, df_fechamento, df_frota, df_suprimentos)
 
         fim = timeit.default_timer()
-        logger.success('Finalizado... %d' %(fim - inicio))
+        logger.success('Finalizado... %ds' %(fim - self.inicio))
         
     def dados_carteira(self):
         df_carteira = pd.read_csv(self.carteira, sep=";", header=0, encoding='latin-1')
@@ -122,14 +124,25 @@ class Preencher_Carga:
             'CARGA ENTREGA', 'BOX', 'DT.INCLUSAO CARGA.ETG', 'STATUS DA CARGA']
         df_carteira = self.reordenarColunas(df_carteira, df_reordena)
         
-        altera_coluna = {'STATUS DA CARGA': str, 'FILIAL DESTINO': str, 'DT CARGA PTO': str}
+        altera_coluna = {'STATUS DA CARGA': str, 'FILIAL DESTINO': str, 'DT CARGA PTO': str, 'DATA ENTRADA': str}
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
-        filtro = (df_carteira['STATUS DA CARGA'].str.startswith('AGUARD. NOTA', 'TRANSITO'))
+        filtro = (df_carteira['STATUS DA CARGA'].str.startswith(('AGUARD. NOTA', 'TRANSITO')))
         df_carteira = self.droparLinhas(df_carteira, filtro)
 
+        df_carteira['CHIP'] = np.select(
+            [(df_carteira['DESCRICAO'].str.contains('CHIP', na=False) 
+                & ~df_carteira['DESCRICAO'].str.contains('CEL', na=False))]
+            , ['Sim'], 'Não')
+
+        df_carteira['DD Aging'] = (pd.to_datetime(date.today()) - pd.to_datetime(df_carteira['DATA ENTRADA'], format="%d.%m.%Y")).dt.days
+
         df_carteira['CHAVE'] = df_carteira['FILIAL DESTINO'] + '-' + df_carteira['DT CARGA PTO']
-        print(df_carteira)
+
+        df_carteira = self.definirPrioridade(df_carteira)
+        
+        df_carteira = self.agingEmCarteira(df_carteira)
+        
         return df_carteira
 
     def dados_auxiliar(self):
@@ -154,10 +167,8 @@ class Preencher_Carga:
         altera_coluna = {'FIL PTO': str, 'DT CARGA': str}
         df_suprimentos = self.alterarTipo(df_suprimentos, altera_coluna)
 
-        print(df_suprimentos.dtypes)
-
         df_suprimentos['CHAVE'] = df_suprimentos['FIL PTO'] + "-" + df_suprimentos['DT CARGA']
-        print(df_suprimentos)
+
         return df_fechamento, df_frota, df_suprimentos
         
     def tratar_dados(self, df_carteira, df_fechamento, df_frota, df_suprimentos):
@@ -165,29 +176,39 @@ class Preencher_Carga:
             how='left', left_on='FILIAL DESTINO', right_on='DESTINO')\
             .drop(columns = ['DESTINO', 'DIA ENTREGA LOJA'])
 
-        df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
-        df_suprimentos.to_csv(self.destino + 'Base_suprimentos.csv', index=False, sep=";", encoding='latin-1')
-
-        print(df_carteira, df_suprimentos)
         df_carteira = pd.merge(df_carteira, df_suprimentos,
             how='left', on='CHAVE')\
             .drop(columns = ['CHAVE', 'FIL PTO', 'DT CARGA'])
 
-        conditions = [
-            (df_carteira['PEDIDO DE VENDA'] == 0), 
-            (df_carteira['TIPO DE ENTRADA DO ITEM'] == 'REQ.SUPPLY'),
-            (df_carteira['SETOR'].str.strip() == 'TELEFONIA CELULAR'),
-            (df_carteira['SETOR'].str.strip().isin(['TVS', 'TABLETS', 'INFORMATICA']))
-        ]
-
-        letters = ['0.PV', '1.Lista Supply', '2.Telefonia', '3.Tecnologia'] #, '4.Aging']
-
-        df_carteira['PRIORIDADE'] = np.select(conditions, letters, ['4.Aging'])
+        # print(df_carteira)
+        # print(df_carteira.columns)
 
         df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
 
-        # print(df_carteira)
-        # print(df_carteira.columns)
+    def definirPrioridade(self, df):
+        conditions = [
+            (df['PEDIDO DE VENDA'] == 0), 
+            (df['TIPO DE ENTRADA DO ITEM'].str.strip() == 'REQ.SUPPLY'),
+            (df['SETOR'].str.strip() == 'TELEFONIA CELULAR'),
+            (df['SETOR'].str.strip().isin(['TVS', 'TABLETS', 'INFORMATICA']))
+        ]
+        result = ['0.PV', '1.Lista Supply', '2.Telefonia', '3.Tecnologia']
+
+        df['PRIORIDADE'] = np.select(conditions, result, ['4.Aging'])
+
+        return df
+
+    def agingEmCarteira(self, df):
+        conditions = [
+            (df['DD Aging'] < 15), 
+            (df['DD Aging'] <= 20),
+            (df['DD Aging'] <= 25)
+        ]
+        result = [df['DD Aging'], '15 a 20', '21 a 25']
+
+        df['Aging DD'] = np.select(conditions, result, ['>25'])
+
+        return df
 
     def listar_bases(self, diretorio, nomeArquivo):
         l_arquivos = os.listdir(diretorio)
