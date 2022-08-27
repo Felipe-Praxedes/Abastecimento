@@ -61,6 +61,44 @@ class Preencher_Carga:
         #     return x    
 
         # print (df_carteira.apply(lambda x: my_fun(x, 'PEDIDO DE VENDA', 'PRIORIDADE'), axis=1))
+
+        # def func(row):
+        #     if row['mobile'] == 'mobile':
+        #         return 'mobile'
+        #     elif row['tablet'] =='tablet':
+        #         return 'tablet' 
+        #     else:
+        #         return 'other'
+
+        # df['combo'] = df.apply(func, axis=1)
+
+        # conditions = [
+        #     (df_carteira['PEDIDO DE VENDA'] > 0), 
+        #     (df_carteira['SETOR'] >= 60),
+        #     (df_carteira['PEDIDO DE VENDA'] >= 70) & (df_carteira['PEDIDO DE VENDA'] < 80),
+        #     (df_carteira['PEDIDO DE VENDA'] >= 80) & (df_carteira['PEDIDO DE VENDA'] < 90),
+        #     (df_carteira['PEDIDO DE VENDA'] >= 90)
+        #     ]
+
+        # letters = ['0.PV', 'd', 'c', 'b', 'a']
+
+        # df_carteira['PRIORIDADE'] = np.select(conditions, letters)
+        
+        # df['combo'] = np.select([df.mobile == 'mobile', df.tablet == 'tablet'], 
+        #                         ['mobile', 'tablet'], 
+        #                         default='other')
+        # # or 
+        # df['combo'] = np.where(df.mobile == 'mobile', 'mobile', 
+        #                     np.where(df.tablet == 'tablet', 'tablet', 'other'))
+        # def func(row):
+        #     if row['PEDIDO DE VENDA'] >0:
+        #         return '0.PV'
+        #     elif row['tablet'] == 'tablet':
+        #         return 'tablet'
+        #     else:
+        #         return 'other'
+
+        # df_carteira['PRIORIDADE'] = df_carteira.apply(func, axis=1)
         pass
     
     def start(self):
@@ -84,13 +122,14 @@ class Preencher_Carga:
             'CARGA ENTREGA', 'BOX', 'DT.INCLUSAO CARGA.ETG', 'STATUS DA CARGA']
         df_carteira = self.reordenarColunas(df_carteira, df_reordena)
         
-        altera_coluna = {'STATUS DA CARGA': str}
+        altera_coluna = {'STATUS DA CARGA': str, 'FILIAL DESTINO': str, 'DT CARGA PTO': str}
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
-        filtro = (df_carteira['STATUS DA CARGA'].str.startswith('AGUARD. NOTA'))
+        filtro = (df_carteira['STATUS DA CARGA'].str.startswith('AGUARD. NOTA', 'TRANSITO'))
         df_carteira = self.droparLinhas(df_carteira, filtro)
 
-        df_carteira['CHAVE'] = str(df_carteira['FILIAL DESTINO']) + '-' + str(df_carteira['DT CARGA PTO'])
+        df_carteira['CHAVE'] = df_carteira['FILIAL DESTINO'] + '-' + df_carteira['DT CARGA PTO']
+        print(df_carteira)
         return df_carteira
 
     def dados_auxiliar(self):
@@ -102,6 +141,8 @@ class Preencher_Carga:
         df_reordena = ['CLUSTER', 'DESTINO', 'GH', 'FECHAMENTO 1200', 'DIA ENTREGA LOJA', 'FREQ', 'POSTO DE ASSIST', 
             'TRANSIT POINT', 'OBSERVAÇÃO', 'TIPOS DE VEICULOS (PLANO)', 'TIPOS DE VEICULOS (CAPACIDADE LOJA)']
         df_fechamento = self.reordenarColunas(df_fechamento, df_reordena)
+        altera_coluna = {'DESTINO': str}
+        df_fechamento = self.alterarTipo(df_fechamento, altera_coluna)
 
         # df_reordena = ['Cluster', 'FILIAL', 'GH', 'TRANSP.', 'Freq.', 'HORÁRIO CARREGAMENTO', 'TRANSPORTADOR', 'OBSERVAÇÃO']
         # df_lista = self.reordenarColunas(df_lista, df_reordena)
@@ -110,8 +151,13 @@ class Preencher_Carga:
         df_suprimentos = self.reordenarColunas(df_suprimentos, df_reordena)
         df_suprimentos = self.renomearColunas(df_suprimentos, {'CUBAGEM':'SUPR. CUB'})
 
-        df_suprimentos['CHAVE'] = str(df_suprimentos['FIL PTO']) + '-' + str(df_suprimentos['DT CARGA'])
+        altera_coluna = {'FIL PTO': str, 'DT CARGA': str}
+        df_suprimentos = self.alterarTipo(df_suprimentos, altera_coluna)
 
+        print(df_suprimentos.dtypes)
+
+        df_suprimentos['CHAVE'] = df_suprimentos['FIL PTO'] + "-" + df_suprimentos['DT CARGA']
+        print(df_suprimentos)
         return df_fechamento, df_frota, df_suprimentos
         
     def tratar_dados(self, df_carteira, df_fechamento, df_frota, df_suprimentos):
@@ -119,13 +165,29 @@ class Preencher_Carga:
             how='left', left_on='FILIAL DESTINO', right_on='DESTINO')\
             .drop(columns = ['DESTINO', 'DIA ENTREGA LOJA'])
 
+        df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
+        df_suprimentos.to_csv(self.destino + 'Base_suprimentos.csv', index=False, sep=";", encoding='latin-1')
+
+        print(df_carteira, df_suprimentos)
         df_carteira = pd.merge(df_carteira, df_suprimentos,
             how='left', on='CHAVE')\
             .drop(columns = ['CHAVE', 'FIL PTO', 'DT CARGA'])
 
-        df_carteira['PRIORIDADE']= np.where(df_carteira['PEDIDO DE VENDA'] > 0, '0.PV', 0)
-        
-        print(df_carteira)
+        conditions = [
+            (df_carteira['PEDIDO DE VENDA'] == 0), 
+            (df_carteira['TIPO DE ENTRADA DO ITEM'] == 'REQ.SUPPLY'),
+            (df_carteira['SETOR'].str.strip() == 'TELEFONIA CELULAR'),
+            (df_carteira['SETOR'].str.strip().isin(['TVS', 'TABLETS', 'INFORMATICA']))
+        ]
+
+        letters = ['0.PV', '1.Lista Supply', '2.Telefonia', '3.Tecnologia'] #, '4.Aging']
+
+        df_carteira['PRIORIDADE'] = np.select(conditions, letters, ['4.Aging'])
+
+        df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
+
+        # print(df_carteira)
+        # print(df_carteira.columns)
 
     def listar_bases(self, diretorio, nomeArquivo):
         l_arquivos = os.listdir(diretorio)
