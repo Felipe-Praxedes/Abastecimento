@@ -26,12 +26,6 @@ class Preencher_Carga:
         self.destino = os.getcwd() + "\\Resultado\\"
 
     def exemple():
-        # rename_dict = {'Cd': 'Filial', 'Item': 'SKU', 'Desc': 'Descrição', 'Aisl': 'Rua', 'Bloc': 'Blocagem', 'Nv': 'Nivel',
-        #             'Qqp': 'Equip', 'eq': 'Qtd Max', 'Sts': 'Status', 'Cub': 'Cub Uni', 'Cub Qtd': 'Cub total',
-        #             'END': 'Eqp/End', 'Cub Eqp': 'Cub Palet', '%Ocupação Palet': '% Ocupação Palet'}
-        
-        # self.renomearColunas(df, rename_dict)
-
         # self.lDataInicial = (datetime.now()- timedelta(days=1)).strftime('%d-%m-%Y')
         # lista_romaneio = plan['Nro. Romaneio'].to_list() listar itens
 
@@ -97,11 +91,11 @@ class Preencher_Carga:
 
     def start(self):
 
-        try:
-            df_carteira = self.dados_carteira()
-        except Exception as e:
-            logger.warning('Falha em obter dados da Carteira >> %s' % str(e))
-            self.sair
+        # try:
+        df_carteira = self.dados_carteira()
+        # except Exception as e:
+        #     logger.warning('Falha em obter dados da Carteira >> %s' % str(e))
+        #     self.sair
             
         try:    
             df_fechamento, df_frota, df_suprimentos = self.dados_auxiliar()
@@ -124,11 +118,14 @@ class Preencher_Carga:
             'CARGA ENTREGA', 'BOX', 'DT.INCLUSAO CARGA.ETG', 'STATUS DA CARGA']
         df_carteira = self.reordenarColunas(df_carteira, df_reordena)
         
-        altera_coluna = {'STATUS DA CARGA': str, 'FILIAL DESTINO': str, 'DT CARGA PTO': str, 'DATA ENTRADA': str}
+        altera_coluna = {'STATUS DA CARGA': str, 'FILIAL DESTINO': str, 'DT CARGA PTO': str, 'DATA ENTRADA': str, 'TIPO PEDIDO': str}
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
-        filtro = (df_carteira['STATUS DA CARGA'].str.startswith(('AGUARD. NOTA', 'TRANSITO')))
+        filtro = (df_carteira['STATUS DA CARGA'].str.startswith(('AGUARD. NOTA', 'TRANSITO')) | df_carteira['TIPO PEDIDO'].str.startswith(('TE', 'TP')))
         df_carteira = self.droparLinhas(df_carteira, filtro)
+
+        # filtro = (df_carteira['TIPO PEDIDO'].str.contains(('TE', 'TP')))
+        # df_carteira = self.droparLinhas(df_carteira, filtro)
 
         df_carteira['CHIP'] = np.select(
             [(df_carteira['DESCRICAO'].str.contains('CHIP', na=False) 
@@ -174,14 +171,11 @@ class Preencher_Carga:
     def tratar_dados(self, df_carteira, df_fechamento, df_frota, df_suprimentos):
         df_carteira = pd.merge(df_carteira, df_fechamento,
             how='left', left_on='FILIAL DESTINO', right_on='DESTINO')\
-            .drop(columns = ['DESTINO', 'DIA ENTREGA LOJA'])
+            .drop(columns = ['DESTINO', 'DIA ENTREGA LOJA', 'DD Aging'])
 
         df_carteira = pd.merge(df_carteira, df_suprimentos,
             how='left', on='CHAVE')\
             .drop(columns = ['CHAVE', 'FIL PTO', 'DT CARGA'])
-
-        # print(df_carteira)
-        # print(df_carteira.columns)
 
         df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
 

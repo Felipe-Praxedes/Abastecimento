@@ -1,10 +1,8 @@
 Loja que fecha no cluster dinamico diferente, mas analise define o carro plano.
-mas carol ele tem carro de 16, mas tem 50 metros não precisa ver cluster, mas ele vai passar nas outras lojas sem dia de fechamento. por causa do RR e TP.
+mas ele tem carro de 16, mas tem 50 metros não precisa ver cluster, mas ele vai passar nas outras lojas sem dia de fechamento. por causa do RR e TP.
 2 Dinâmico no mesmo cluster para.
-Tirar TE e TP.
-Aguardando nota.
-Transito.
-Roteiro de aging.
+Feito >>>> Tirar TE e TP. Aguardando nota. Transito.
+Feito >>>> Roteiro de aging.
 Aging, verificar lojas com oportunidade acima de 7. 
 Carga entrega sem NF.
 Carga sem Plano, precisa movimentar. Tudo tem carga entrega com status em aberto. DT inclusão da carga entrega diferente de hoje. 
