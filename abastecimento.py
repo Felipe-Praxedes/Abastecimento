@@ -44,27 +44,6 @@ class Preencher_Carga:
 
         # print("Hello to the {} {}".format(var2,var1))
         # print("Hello to the %s %d " %(var2,var1))
-        # print('Hello to the {} {}' + var2 + str(var1))
-
-        # def my_fun(x, var1, var3):
-        #     print (x)
-        #     if x[var1] > 0 :
-        #         x[var3]='0.PV'
-        #     else:
-        #         x[var3]= 'Nada'
-        #     return x    
-
-        # print (df_carteira.apply(lambda x: my_fun(x, 'PEDIDO DE VENDA', 'PRIORIDADE'), axis=1))
-
-        # def func(row):
-        #     if row['mobile'] == 'mobile':
-        #         return 'mobile'
-        #     elif row['tablet'] =='tablet':
-        #         return 'tablet' 
-        #     else:
-        #         return 'other'
-        # 
-        # df['combo'] = df.apply(func, axis=1)
         
         # df['combo'] = np.select([df.mobile == 'mobile', df.tablet == 'tablet'], 
         #                         ['mobile', 'tablet'], 
@@ -91,11 +70,11 @@ class Preencher_Carga:
 
     def start(self):
 
-        # try:
-        df_carteira = self.dados_carteira()
-        # except Exception as e:
-        #     logger.warning('Falha em obter dados da Carteira >> %s' % str(e))
-        #     self.sair
+        try:
+            df_carteira = self.dados_carteira()
+        except Exception as e:
+            logger.warning('Falha em obter dados da Carteira >> %s' % str(e))
+            self.sair
             
         try:    
             df_fechamento, df_frota, df_suprimentos = self.dados_auxiliar()
@@ -117,15 +96,18 @@ class Preencher_Carga:
             'ESTOQ.FIL', 'DATA ENTRADA', 'DT CARGA PTO', 'CARGA PTO', 'TIPO DE CARGA', 
             'CARGA ENTREGA', 'BOX', 'DT.INCLUSAO CARGA.ETG', 'STATUS DA CARGA']
         df_carteira = self.reordenarColunas(df_carteira, df_reordena)
+
+        df_carteira = df_carteira.replace({'CUBAGEM TOTAL': ',', 'CUSTO MEDIO TOTAL': ','}, value='.', regex=True)
         
-        altera_coluna = {'STATUS DA CARGA': str, 'FILIAL DESTINO': str, 'DT CARGA PTO': str, 'DATA ENTRADA': str, 'TIPO PEDIDO': str}
+        altera_coluna = {'STATUS DA CARGA': str, 
+            'FILIAL DESTINO': str, 'DT CARGA PTO': str, 
+            'DATA ENTRADA': str, 'TIPO PEDIDO': str,
+            'QTDE': int, 'CUBAGEM TOTAL': float, 'CUSTO MEDIO TOTAL': float    
+        }
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
         filtro = (df_carteira['STATUS DA CARGA'].str.startswith(('AGUARD. NOTA', 'TRANSITO')) | df_carteira['TIPO PEDIDO'].str.startswith(('TE', 'TP')))
         df_carteira = self.droparLinhas(df_carteira, filtro)
-
-        # filtro = (df_carteira['TIPO PEDIDO'].str.contains(('TE', 'TP')))
-        # df_carteira = self.droparLinhas(df_carteira, filtro)
 
         df_carteira['CHIP'] = np.select(
             [(df_carteira['DESCRICAO'].str.contains('CHIP', na=False) 
@@ -151,7 +133,8 @@ class Preencher_Carga:
         df_reordena = ['CLUSTER', 'DESTINO', 'GH', 'FECHAMENTO 1200', 'DIA ENTREGA LOJA', 'FREQ', 'POSTO DE ASSIST', 
             'TRANSIT POINT', 'OBSERVAÇÃO', 'TIPOS DE VEICULOS (PLANO)', 'TIPOS DE VEICULOS (CAPACIDADE LOJA)']
         df_fechamento = self.reordenarColunas(df_fechamento, df_reordena)
-        altera_coluna = {'DESTINO': str}
+
+        altera_coluna = {'DESTINO': str, 'GH': int,'FREQ': int, 'POSTO DE ASSIST': float, 'TRANSIT POINT': float}
         df_fechamento = self.alterarTipo(df_fechamento, altera_coluna)
 
         # df_reordena = ['Cluster', 'FILIAL', 'GH', 'TRANSP.', 'Freq.', 'HORÁRIO CARREGAMENTO', 'TRANSPORTADOR', 'OBSERVAÇÃO']
@@ -161,7 +144,9 @@ class Preencher_Carga:
         df_suprimentos = self.reordenarColunas(df_suprimentos, df_reordena)
         df_suprimentos = self.renomearColunas(df_suprimentos, {'CUBAGEM':'SUPR. CUB'})
 
-        altera_coluna = {'FIL PTO': str, 'DT CARGA': str}
+        df_suprimentos = df_suprimentos.replace({'SUPR. CUB': ','}, value='.', regex=True)
+
+        altera_coluna = {'FIL PTO': str, 'DT CARGA': str, 'SUPR. CUB': float}
         df_suprimentos = self.alterarTipo(df_suprimentos, altera_coluna)
 
         df_suprimentos['CHAVE'] = df_suprimentos['FIL PTO'] + "-" + df_suprimentos['DT CARGA']
@@ -176,8 +161,14 @@ class Preencher_Carga:
         df_carteira = pd.merge(df_carteira, df_suprimentos,
             how='left', on='CHAVE')\
             .drop(columns = ['CHAVE', 'FIL PTO', 'DT CARGA'])
+        
+        df_cluster = pd.pivot_table(df_carteira, values=['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL'], 
+            index= ['CLUSTER', 'FILIAL DESTINO', 'GH', 'FECHAMENTO 1200', 'FREQ'], 
+            aggfunc={'QTDE' : np.sum, 'CUBAGEM TOTAL': np.sum, 'CUSTO MEDIO TOTAL': np.sum},
+            fill_value=0)
 
         df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
+        df_cluster.to_csv(self.destino + 'Base_cluster.csv', sep=";", encoding='latin-1')
 
     def definirPrioridade(self, df):
         conditions = [
