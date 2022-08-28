@@ -162,13 +162,32 @@ class Preencher_Carga:
             how='left', on='CHAVE')\
             .drop(columns = ['CHAVE', 'FIL PTO', 'DT CARGA'])
         
-        df_cluster = pd.pivot_table(df_carteira, values=['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL'], 
-            index= ['CLUSTER', 'FILIAL DESTINO', 'GH', 'FECHAMENTO 1200', 'FREQ'], 
-            aggfunc={'QTDE' : np.sum, 'CUBAGEM TOTAL': np.sum, 'CUSTO MEDIO TOTAL': np.sum},
-            fill_value=0)
+        df_cluster, df_destino = self.agruparDados(df_carteira)
+        
+        df_carteira = pd.merge(df_carteira, df_cluster,
+            how='left', on='CLUSTER')
+        
+        df_carteira = pd.merge(df_carteira, df_destino,
+            how='left', on='FILIAL DESTINO')
 
         df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
-        df_cluster.to_csv(self.destino + 'Base_cluster.csv', sep=";", encoding='latin-1')
+
+    def agruparDados(self, df_carteira):
+        df_cluster = pd.pivot_table(df_carteira, values=['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL'], 
+            index= ['CLUSTER'], 
+            aggfunc={'QTDE' : np.sum, 'CUBAGEM TOTAL': np.sum, 'CUSTO MEDIO TOTAL': np.sum},
+            fill_value=0)
+        df_cluster = self.renomearColunas(df_cluster, 
+            {'QTDE': 'QTD_CLUSTER', 'CUBAGEM TOTAL': 'CUB_TTL_CLUSTER', 'CUSTO MEDIO TOTAL': 'CUSTO_MED_TTL_CLUSTER'})
+        
+        df_destino = pd.pivot_table(df_carteira, values=['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL'], 
+            index= ['FILIAL DESTINO'], 
+            aggfunc={'QTDE' : np.sum, 'CUBAGEM TOTAL': np.sum, 'CUSTO MEDIO TOTAL': np.sum},
+            fill_value=0)
+        df_cluster = self.renomearColunas(df_cluster, 
+            {'QTDE': 'QTD_FILIAL', 'CUBAGEM TOTAL': 'CUB_TTL_FILIAL', 'CUSTO MEDIO TOTAL': 'CUSTO_MED_TTL_FILIAL'})
+
+        return df_cluster, df_destino
 
     def definirPrioridade(self, df):
         conditions = [
