@@ -61,6 +61,8 @@ class Preencher_Carga:
 
         # df_carteira['PRIORIDADE'] = df_carteira.apply(func, axis=1)
         # data_limite = datetime.strptime(data, '%d.%m.%Y').date()
+        
+        # df[(df.a > 1) & (df.a < 3)].sum()
         pass
     
     def sair(self):
@@ -82,7 +84,9 @@ class Preencher_Carga:
             logger.warning('Falha em obter dados auxiliares >> %s' % str(e))
             self.sair
 
-        self.tratar_dados(df_carteira, df_fechamento, df_frota, df_suprimentos)
+        df_plano, df_frota = self.fechamentoFrotas(df_fechamento, df_frota)
+
+        self.tratar_dados(df_carteira, df_fechamento, df_plano, df_frota, df_suprimentos)
 
         fim = timeit.default_timer()
         logger.success('Finalizado... %ds' %(fim - self.inicio))
@@ -154,7 +158,7 @@ class Preencher_Carga:
 
         return df_fechamento, df_frota, df_suprimentos
         
-    def tratar_dados(self, df_carteira, df_fechamento, df_frota, df_suprimentos):
+    def tratar_dados(self, df_carteira, df_fechamento, df_plano, df_frota, df_suprimentos):
         df_carteira = pd.merge(df_carteira, df_fechamento,
             how='left', left_on='FILIAL DESTINO', right_on='DESTINO')\
             .drop(columns = ['DESTINO', 'DIA ENTREGA LOJA', 'DD Aging'])
@@ -180,10 +184,11 @@ class Preencher_Carga:
         }
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
-        ordenar_coluna = ['CLUSTER', 'CUBAGEM TOTAL', 'QTDE', 'CUSTO MEDIO TOTAL']
+        ordenar_coluna = ['CLUSTER', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']
         df_carteira = self.ordenarLinhas(df_carteira, ordenar_coluna, False)
 
-        print(df_carteira[['CLUSTER', 'QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL']].head(10))
+        # total = df_carteira[df_carteira['CLUSTER'] == 'SPMTR266'].sum()[['CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']]
+        # print(total)
 
         # df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
 
@@ -229,6 +234,11 @@ class Preencher_Carga:
 
         return df
 
+    def fechamentoFrotas(self, df_1, df_2):
+        df_1.groupby(['CLUSTER', 'FECHAMENTO 1200'])['OBSERVAÇÃO'].nunique()
+        
+        return df_1, df_2
+        
     def listar_bases(self, diretorio, nomeArquivo):
         l_arquivos = os.listdir(diretorio)
         l_datas = []
