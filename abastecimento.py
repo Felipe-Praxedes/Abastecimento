@@ -114,7 +114,8 @@ class Preencher_Carga:
                 & ~df_carteira['DESCRICAO'].str.contains('CEL', na=False))]
             , ['Sim'], 'Não')
 
-        df_carteira['DD Aging'] = (pd.to_datetime(date.today()) - pd.to_datetime(df_carteira['DATA ENTRADA'], format="%d.%m.%Y")).dt.days
+        df_carteira['DD Aging'] = \
+        (pd.to_datetime(date.today()) - pd.to_datetime(df_carteira['DATA ENTRADA'], format="%d.%m.%Y")).dt.days
 
         df_carteira['CHAVE'] = df_carteira['FILIAL DESTINO'] + '-' + df_carteira['DT CARGA PTO']
 
@@ -169,8 +170,22 @@ class Preencher_Carga:
         
         df_carteira = pd.merge(df_carteira, df_destino,
             how='left', on='FILIAL DESTINO')
+        
+        df_carteira = df_carteira.replace({'CUBAGEM TOTAL': ',', 'CUSTO MEDIO TOTAL': ','}, value='.', regex=True)
+        
+        altera_coluna = {'STATUS DA CARGA': str, 
+            'FILIAL DESTINO': str, 'DT CARGA PTO': str, 
+            'DATA ENTRADA': str, 'TIPO PEDIDO': str,
+            'QTDE': int, 'CUBAGEM TOTAL': float, 'CUSTO MEDIO TOTAL': float    
+        }
+        df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
-        df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
+        ordenar_coluna = ['CLUSTER', 'CUBAGEM TOTAL', 'QTDE', 'CUSTO MEDIO TOTAL']
+        df_carteira = self.ordenarLinhas(df_carteira, ordenar_coluna, False)
+
+        print(df_carteira[['CLUSTER', 'QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL']].head(10))
+
+        # df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
 
     def agruparDados(self, df_carteira):
         df_cluster = pd.pivot_table(df_carteira, values=['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL'], 
@@ -184,7 +199,7 @@ class Preencher_Carga:
             index= ['FILIAL DESTINO'], 
             aggfunc={'QTDE' : np.sum, 'CUBAGEM TOTAL': np.sum, 'CUSTO MEDIO TOTAL': np.sum},
             fill_value=0)
-        df_cluster = self.renomearColunas(df_cluster, 
+        df_destino = self.renomearColunas(df_destino, 
             {'QTDE': 'QTD_FILIAL', 'CUBAGEM TOTAL': 'CUB_TTL_FILIAL', 'CUSTO MEDIO TOTAL': 'CUSTO_MED_TTL_FILIAL'})
 
         return df_cluster, df_destino
@@ -242,8 +257,8 @@ class Preencher_Carga:
         df.rename(columns=lista, inplace=True, errors='ignore')
         return df
 
-    def ordenarLinhas(self, df, lista):
-        df = df.sort_values(by=lista, inplace=True)
+    def ordenarLinhas(self, df, lista, bool = True):
+        df.sort_values(by=lista, inplace=True, ascending=bool, ignore_index=True)
         return df
 
     def droparLinhas(self, df, filtro):
