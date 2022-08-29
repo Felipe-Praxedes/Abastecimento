@@ -63,6 +63,21 @@ class Preencher_Carga:
         # data_limite = datetime.strptime(data, '%d.%m.%Y').date()
         
         # df[(df.a > 1) & (df.a < 3)].sum()
+
+        # df = pd.DataFrame({'a': ['a', 'b', 'a', 'a', 'b', 'c', 'd']})
+        # after = df.groupby('a').size()
+        # >> after
+        # a
+        # a    3
+        # b    2
+        # c    1
+        # d    1
+        # dtype: int64
+
+        # >> after[after > 2]
+        # a
+        # a    3
+        # dtype: int64
         pass
     
     def sair(self):
@@ -150,7 +165,7 @@ class Preencher_Carga:
         df_suprimentos = self.renomearColunas(df_suprimentos, {'CUBAGEM':'SUPR. CUB'})
 
         df_suprimentos = df_suprimentos.replace({'SUPR. CUB': ','}, value='.', regex=True)
-
+        
         altera_coluna = {'FIL PTO': str, 'DT CARGA': str, 'SUPR. CUB': float}
         df_suprimentos = self.alterarTipo(df_suprimentos, altera_coluna)
 
@@ -180,8 +195,7 @@ class Preencher_Carga:
         altera_coluna = {'STATUS DA CARGA': str, 
             'FILIAL DESTINO': str, 'DT CARGA PTO': str, 
             'DATA ENTRADA': str, 'TIPO PEDIDO': str,
-            'QTDE': int, 'CUBAGEM TOTAL': float, 'CUSTO MEDIO TOTAL': float    
-        }
+            'QTDE': int, 'CUBAGEM TOTAL': float, 'CUSTO MEDIO TOTAL': float}
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
         ordenar_coluna = ['CLUSTER', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']
@@ -203,7 +217,7 @@ class Preencher_Carga:
         df_destino = pd.pivot_table(df_carteira, values=['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL'], 
             index= ['FILIAL DESTINO'], 
             aggfunc={'QTDE' : np.sum, 'CUBAGEM TOTAL': np.sum, 'CUSTO MEDIO TOTAL': np.sum},
-            fill_value=0)
+            fill_value=0)    
         df_destino = self.renomearColunas(df_destino, 
             {'QTDE': 'QTD_FILIAL', 'CUBAGEM TOTAL': 'CUB_TTL_FILIAL', 'CUSTO MEDIO TOTAL': 'CUSTO_MED_TTL_FILIAL'})
 
@@ -231,11 +245,28 @@ class Preencher_Carga:
         result = [df['DD Aging'], '15 a 20', '21 a 25']
 
         df['Aging DD'] = np.select(conditions, result, ['>25'])
-
+        
         return df
 
     def fechamentoFrotas(self, df_1, df_2):
-        df_1.groupby(['CLUSTER', 'FECHAMENTO 1200'])['OBSERVAÇÃO'].nunique()
+        df_1 = pd.DataFrame(
+            {'QTDE_DIN':
+                df_1.groupby(['CLUSTER', 'FECHAMENTO 1200'])['OBSERVAÇÃO'].nunique()})\
+            .reset_index()
+        print(df_1[df_1['CLUSTER'].str.contains('SPGSP030')])
+
+        df_dia_semana = pd.DataFrame(
+                {'FCH_TTL':
+                    df_1.groupby('CLUSTER')['QTDE_DIN'].sum()})\
+                .reset_index()
+        
+        dia_semana = ['FCH_SEG', 'FCH_TER', 'FCH_QUA', 'FCH_QUI', 'FCH_SEX']
+        for ds in dia_semana:
+            df_ds = df_1[df_1['FECHAMENTO 1200'].str.contains(ds[-3:])]
+            df_dia_semana = pd.DataFrame(
+                {'%s'%(ds):
+                    df_ds.groupby('CLUSTER')['QTDE_DIN'].sum()})\
+                .reset_index()
         
         return df_1, df_2
         
