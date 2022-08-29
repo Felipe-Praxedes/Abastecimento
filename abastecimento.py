@@ -78,6 +78,7 @@ class Preencher_Carga:
         # a
         # a    3
         # dtype: int64
+        # print(df_dia_semana[df_dia_semana['FCH_QUA'] >=1 ])
         pass
     
     def sair(self):
@@ -98,8 +99,17 @@ class Preencher_Carga:
         except Exception as e:
             logger.warning('Falha em obter dados auxiliares >> %s' % str(e))
             self.sair
-
-        df_plano, df_frota = self.fechamentoFrotas(df_fechamento, df_frota)
+        try:
+            df_plano = self.fechamentoFrotas(df_fechamento)
+        except Exception as e:
+            logger.warning('Falha em obter dados auxiliares >> %s' % str(e))
+            self.sair
+            
+        try:    
+            df_frota = self.frotaDisponivel(df_frota)
+        except:
+            logger.warning('Falha em obter dados auxiliares >> %s' % str(e))
+            self.sair
 
         self.tratar_dados(df_carteira, df_fechamento, df_plano, df_frota, df_suprimentos)
 
@@ -248,12 +258,11 @@ class Preencher_Carga:
         
         return df
 
-    def fechamentoFrotas(self, df_1, df_2):
+    def fechamentoFrotas(self, df_1):
         df_1 = pd.DataFrame(
             {'QTDE_DIN':
                 df_1.groupby(['CLUSTER', 'FECHAMENTO 1200'])['OBSERVAÇÃO'].nunique()})\
             .reset_index()
-        print(df_1[df_1['CLUSTER'].str.contains('SPGSP030')])
 
         df_dia_semana = pd.DataFrame(
                 {'FCH_TTL':
@@ -263,13 +272,35 @@ class Preencher_Carga:
         dia_semana = ['FCH_SEG', 'FCH_TER', 'FCH_QUA', 'FCH_QUI', 'FCH_SEX']
         for ds in dia_semana:
             df_ds = df_1[df_1['FECHAMENTO 1200'].str.contains(ds[-3:])]
-            df_dia_semana = pd.DataFrame(
+            df_ds = pd.DataFrame(
                 {'%s'%(ds):
                     df_ds.groupby('CLUSTER')['QTDE_DIN'].sum()})\
                 .reset_index()
+            df_dia_semana = pd.merge(df_dia_semana, df_ds, how='left', on='CLUSTER')
+
+        df_dia_semana.fillna(0, inplace=True)
         
-        return df_1, df_2
-        
+        return df_dia_semana
+
+    def frotaDisponivel(self, df):
+        l_data= []
+        df.reset_index()
+        for index, row in df.iterrows():
+            x = 0
+            for c in df.columns:
+                try:
+                    col: str = c.replace('m³', '')[(c.index('a '))+1:10].strip()
+                except:
+                    col: str = c.replace('m³', '').strip()
+                    
+                if 'Transp' not in col and 'Cam' not in row[0] and 'TOTAL' not in row[0]:
+                    tipo = 'Local'
+                    if 'POLO' in row[0]: tipo = 'Polo' 
+                    l_data.append({'Transportadora': row[0], 'Tipo': tipo, 'm³': col, 'Qtde': row[x]})
+                x += 1
+        df = pd.DataFrame(l_data, columns=['Transportadora', 'Tipo', 'm³', 'Qtde'])
+        return df
+
     def listar_bases(self, diretorio, nomeArquivo):
         l_arquivos = os.listdir(diretorio)
         l_datas = []

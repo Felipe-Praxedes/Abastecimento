@@ -1,0 +1,131 @@
+Transportadora;Tipo;m³;Qtde
+AR EXPRESS;Local;2;1.0
+AR EXPRESS;Local;7;
+AR EXPRESS;Local;8;2.0
+AR EXPRESS;Local;12;
+AR EXPRESS;Local;13;
+AR EXPRESS;Local;14;1.0
+AR EXPRESS;Local;16;3.0
+AR EXPRESS;Local;20;1.0
+AR EXPRESS;Local;24;
+AR EXPRESS;Local;26;
+AR EXPRESS;Local;32;
+AR EXPRESS;Local;40;
+AR EXPRESS;Local;Total;8.0
+EFATHA;Local;2;2.0
+EFATHA;Local;7;
+EFATHA;Local;8;
+EFATHA;Local;12;
+EFATHA;Local;13;
+EFATHA;Local;14;
+EFATHA;Local;16;2.0
+EFATHA;Local;20;
+EFATHA;Local;24;2.0
+EFATHA;Local;26;
+EFATHA;Local;32;
+EFATHA;Local;40;2.0
+EFATHA;Local;Total;8.0
+ERIVALDO ( POLO );Polo;2;
+ERIVALDO ( POLO );Polo;7;
+ERIVALDO ( POLO );Polo;8;
+ERIVALDO ( POLO );Polo;12;
+ERIVALDO ( POLO );Polo;13;
+ERIVALDO ( POLO );Polo;14;
+ERIVALDO ( POLO );Polo;16;
+ERIVALDO ( POLO );Polo;20;
+ERIVALDO ( POLO );Polo;24;1.0
+ERIVALDO ( POLO );Polo;26;
+ERIVALDO ( POLO );Polo;32;
+ERIVALDO ( POLO );Polo;40;
+ERIVALDO ( POLO );Polo;Total;1.0
+JETTA  ( POLO );Polo;2;
+JETTA  ( POLO );Polo;7;
+JETTA  ( POLO );Polo;8;
+JETTA  ( POLO );Polo;12;
+JETTA  ( POLO );Polo;13;
+JETTA  ( POLO );Polo;14;
+JETTA  ( POLO );Polo;16;
+JETTA  ( POLO );Polo;20;
+JETTA  ( POLO );Polo;24;3.0
+JETTA  ( POLO );Polo;26;
+JETTA  ( POLO );Polo;32;
+JETTA  ( POLO );Polo;40;
+JETTA  ( POLO );Polo;Total;3.0
+MK;Local;2;1.0
+MK;Local;7;
+MK;Local;8;
+MK;Local;12;
+MK;Local;13;
+MK;Local;14;4.0
+MK;Local;16;
+MK;Local;20;
+MK;Local;24;
+MK;Local;26;
+MK;Local;32;
+MK;Local;40;
+MK;Local;Total;5.0
+RADI;Local;2;
+RADI;Local;7;
+RADI;Local;8;
+RADI;Local;12;1.0
+RADI;Local;13;1.0
+RADI;Local;14;2.0
+RADI;Local;16;1.0
+RADI;Local;20;
+RADI;Local;24;
+RADI;Local;26;
+RADI;Local;32;
+RADI;Local;40;
+RADI;Local;Total;5.0
+RICOO LOG;Local;2;
+RICOO LOG;Local;7;
+RICOO LOG;Local;8;1.0
+RICOO LOG;Local;12;
+RICOO LOG;Local;13;
+RICOO LOG;Local;14;6.0
+RICOO LOG;Local;16;15.0
+RICOO LOG;Local;20;
+RICOO LOG;Local;24;
+RICOO LOG;Local;26;3.0
+RICOO LOG;Local;32;
+RICOO LOG;Local;40;
+RICOO LOG;Local;Total;25.0
+SOUZA E CHIC;Local;2;
+SOUZA E CHIC;Local;7;
+SOUZA E CHIC;Local;8;3.0
+SOUZA E CHIC;Local;12;
+SOUZA E CHIC;Local;13;3.0
+SOUZA E CHIC;Local;14;3.0
+SOUZA E CHIC;Local;16;9.0
+SOUZA E CHIC;Local;20;
+SOUZA E CHIC;Local;24;
+SOUZA E CHIC;Local;26;3.0
+SOUZA E CHIC;Local;32;
+SOUZA E CHIC;Local;40;
+SOUZA E CHIC;Local;Total;21.0
+TRANS-ISA;Local;2;
+TRANS-ISA;Local;7;
+TRANS-ISA;Local;8;
+TRANS-ISA;Local;12;
+TRANS-ISA;Local;13;
+TRANS-ISA;Local;14;
+TRANS-ISA;Local;16;
+TRANS-ISA;Local;20;
+TRANS-ISA;Local;24;
+TRANS-ISA;Local;26;
+TRANS-ISA;Local;32;
+TRANS-ISA;Local;40;
+TRANS-ISA;Local;Total;0.0
+VPLOG ( POLO );Polo;2;
+VPLOG ( POLO );Polo;7;
+VPLOG ( POLO );Polo;8;
+VPLOG ( POLO );Polo;12;
+VPLOG ( POLO );Polo;13;
+VPLOG ( POLO );Polo;14;
+VPLOG ( POLO );Polo;16;
+VPLOG ( POLO );Polo;20;2.0
+VPLOG ( POLO );Polo;24;
+VPLOG ( POLO );Polo;26;5.0
+VPLOG ( POLO );Polo;32;
+VPLOG ( POLO );Polo;40;
+VPLOG ( POLO );Polo;Total;7.0
