@@ -1,12 +1,11 @@
-import sys
-import pandas as pd
-import os
-import timeit
-import time
-from datetime import date, datetime
-from datetime import timedelta
+from pickletools import int4
 from loguru import logger
+from datetime import date, datetime
+import pandas as pd
 import numpy as np
+import timeit
+import os
+import sys
 
 class Preencher_Carga:
 
@@ -15,10 +14,10 @@ class Preencher_Carga:
         self.inicio = timeit.default_timer()
 
         self.bases = os.getcwd() + "\\Base\\"
-        self.nomeArquivo = ['CARTEIRA', 'Fechamento', 'Frota', 'Lista', 'A2J315']
+        self.nomeArquivo = ['CARTEIRA', 'Fechamento', 'Frota', 'Lista', 'A2J315', 'DRP'] 
 
         try:
-            self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos = self.listar_bases(self.bases, self.nomeArquivo)
+            self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos, self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
         except Exception as e:
             logger.error('Falha em obter dados >> %s' % str(e))
             self.sair()
@@ -79,6 +78,10 @@ class Preencher_Carga:
         # a    3
         # dtype: int64
         # print(df_dia_semana[df_dia_semana['FCH_QUA'] >=1 ])
+        # df = df.filter(regex='CODIGO_ITEM|ITEM')
+        # df['FILIAL'] = df['FILIAL'].replace('0021_0', '', regex=True)
+        # total = df_carteira[df_carteira['CLUSTER'] == 'SPMTR266'].sum()[['CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']]
+        # print(total)
         pass
     
     def sair(self):
@@ -87,37 +90,45 @@ class Preencher_Carga:
         sys.exit()
 
     def start(self):
-
         try:
-            df_carteira = self.dados_carteira()
+            df_carteira = self.dadosCarteira()
         except Exception as e:
             logger.warning('Falha em obter dados da Carteira >> %s' % str(e))
             self.sair
-            
-        try:    
-            df_fechamento, df_frota, df_suprimentos = self.dados_auxiliar()
-        except Exception as e:
-            logger.warning('Falha em obter dados auxiliares >> %s' % str(e))
-            self.sair
+
         try:
-            df_plano = self.fechamentoFrotas(df_fechamento)
+            df_ddeSupply = self.estoqueLojaSupply()
         except Exception as e:
-            logger.warning('Falha em obter dados auxiliares >> %s' % str(e))
+            logger.warning('Falha em obter dados do estoque Supply >> %s' % str(e))
             self.sair
-            
+           
         try:    
-            df_frota = self.frotaDisponivel(df_frota)
-        except:
+            df_fechamento, df_frota, df_suprimentos = self.dadosAuxiliar()
+        except Exception as e:
             logger.warning('Falha em obter dados auxiliares >> %s' % str(e))
             self.sair
 
-        self.tratar_dados(df_carteira, df_fechamento, df_plano, df_frota, df_suprimentos)
+        try:
+            df_plano = self.fechamentoFrotas(df_fechamento)
+        except Exception as e:
+            logger.warning('Falha em obter dados de fechamento >> %s' % str(e))
+            self.sair
+
+        try:    
+            df_frota = self.frotaDisponivel(df_frota)
+        except:
+            logger.warning('Falha em obter dados de frota disponível >> %s' % str(e))
+            self.sair
+
+        df_carteira = self.tratarDados(df_carteira, df_fechamento, df_plano, df_frota, df_suprimentos, df_ddeSupply)
+
+        self.gerarSaida(df_carteira)
 
         fim = timeit.default_timer()
         logger.success('Finalizado... %ds' %(fim - self.inicio))
         
-    def dados_carteira(self):
-        df_carteira = pd.read_csv(self.carteira, sep=";", header=0, encoding='latin-1')
+    def dadosCarteira(self):
+        df_carteira = pd.read_csv(self.carteira, sep=";", header=0, encoding='latin-1', dtype=str)
 
         df_reordena = ['TIPO DE ENTRADA DO ITEM', 'TIPO PEDIDO', 
             'PEDIDO DE VENDA', 'PEDIDO', 'FILIAL ENTREGA', 'FILIAL DESTINO', 'MUNICIPIO', 'UF', 'TIPO ITEM', 'SITUACAO', 
@@ -128,12 +139,13 @@ class Preencher_Carga:
 
         df_carteira = df_carteira.replace({'CUBAGEM TOTAL': ',', 'CUSTO MEDIO TOTAL': ','}, value='.', regex=True)
         
-        altera_coluna = {'STATUS DA CARGA': str, 
-            'FILIAL DESTINO': str, 'DT CARGA PTO': str, 
-            'DATA ENTRADA': str, 'TIPO PEDIDO': str,
-            'QTDE': int, 'CUBAGEM TOTAL': float, 'CUSTO MEDIO TOTAL': float    
-        }
+        altera_coluna = {'QTDE': int, 'CUBAGEM TOTAL': float, 'CUSTO MEDIO TOTAL': float, 'MERCADORIA': int} 
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
+        df_carteira = self.alterarTipo(df_carteira, {'MERCADORIA': str})
+
+        df_carteira = df_carteira[df_carteira['FILIAL DESTINO'] == '1402']
+        print(df_carteira.dtypes)
+        print(df_carteira['CUBAGEM TOTAL'].sum())
 
         filtro = (df_carteira['STATUS DA CARGA'].str.startswith(('AGUARD. NOTA', 'TRANSITO')) | df_carteira['TIPO PEDIDO'].str.startswith(('TE', 'TP')))
         df_carteira = self.droparLinhas(df_carteira, filtro)
@@ -147,18 +159,29 @@ class Preencher_Carga:
         (pd.to_datetime(date.today()) - pd.to_datetime(df_carteira['DATA ENTRADA'], format="%d.%m.%Y")).dt.days
 
         df_carteira['CHAVE'] = df_carteira['FILIAL DESTINO'] + '-' + df_carteira['DT CARGA PTO']
+        df_carteira['CHAVE_DDE'] = df_carteira['FILIAL DESTINO'] + '-' + df_carteira['MERCADORIA']
 
-        df_carteira = self.definirPrioridade(df_carteira)
-        
         df_carteira = self.agingEmCarteira(df_carteira)
         
         return df_carteira
+    
+    def estoqueLojaSupply(self):
+        df = pd.read_csv(self.ddeSupply, sep=";", header=0, encoding='latin-1', dtype=str)
 
-    def dados_auxiliar(self):
+        firstColumn = df.columns[0]
+        df_reordena = [firstColumn, 'FILIAL', 'CLASSIFICACAO', 'DDV_FUTURO', 'DDV_SO', 'SINALIZADOR']
+        df= self.reordenarColunas(df, df_reordena)
+
+        df['FILIAL'] = df['FILIAL'].str[-4:]
+        df['CHAVE_DDE'] = df['FILIAL'] + '-' + df[firstColumn]
+        df = df.drop(columns=[firstColumn, 'FILIAL'])
+        return df
+
+    def dadosAuxiliar(self):
         df_fechamento = pd.read_excel(self.fechamento)
         df_frota = pd.read_excel(self.frota, header=1)
         # df_lista = pd.read_excel(self.lista)
-        df_suprimentos = pd.read_csv(self.suprimentos, sep=";", header=0, encoding='latin-1')
+        df_suprimentos = pd.read_csv(self.suprimentos, sep=";", header=0, encoding='latin-1', dtype=str)
         
         df_reordena = ['CLUSTER', 'DESTINO', 'GH', 'FECHAMENTO 1200', 'DIA ENTREGA LOJA', 'FREQ', 'POSTO DE ASSIST', 
             'TRANSIT POINT', 'OBSERVAÇÃO', 'TIPOS DE VEICULOS (PLANO)', 'TIPOS DE VEICULOS (CAPACIDADE LOJA)']
@@ -183,10 +206,14 @@ class Preencher_Carga:
 
         return df_fechamento, df_frota, df_suprimentos
         
-    def tratar_dados(self, df_carteira, df_fechamento, df_plano, df_frota, df_suprimentos):
+    def tratarDados(self, df_carteira, df_fechamento, df_plano, df_frota, df_suprimentos, df_ddeSupply):
         df_carteira = pd.merge(df_carteira, df_fechamento,
             how='left', left_on='FILIAL DESTINO', right_on='DESTINO')\
             .drop(columns = ['DESTINO', 'DIA ENTREGA LOJA', 'DD Aging'])
+
+        df_carteira = pd.merge(df_carteira, df_ddeSupply,
+            how='left', on='CHAVE_DDE')\
+            .drop(columns = ['CHAVE_DDE'])
 
         df_carteira = pd.merge(df_carteira, df_suprimentos,
             how='left', on='CHAVE')\
@@ -199,8 +226,8 @@ class Preencher_Carga:
         
         df_carteira = pd.merge(df_carteira, df_destino,
             how='left', on='FILIAL DESTINO')
-        
-        df_carteira = df_carteira.replace({'CUBAGEM TOTAL': ',', 'CUSTO MEDIO TOTAL': ','}, value='.', regex=True)
+
+        df_carteira = df_carteira.replace({'QTDE':',', 'CUBAGEM TOTAL':',', 'CUSTO MEDIO TOTAL':','}, value='.', regex=True)
         
         altera_coluna = {'STATUS DA CARGA': str, 
             'FILIAL DESTINO': str, 'DT CARGA PTO': str, 
@@ -208,13 +235,12 @@ class Preencher_Carga:
             'QTDE': int, 'CUBAGEM TOTAL': float, 'CUSTO MEDIO TOTAL': float}
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
-        ordenar_coluna = ['CLUSTER', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']
+        ordenar_coluna = ['CLUSTER', 'FILIAL DESTINO', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']
         df_carteira = self.ordenarLinhas(df_carteira, ordenar_coluna, False)
 
-        # total = df_carteira[df_carteira['CLUSTER'] == 'SPMTR266'].sum()[['CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']]
-        # print(total)
+        df_carteira = self.definirPrioridade(df_carteira)
 
-        # df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
+        return df_carteira
 
     def agruparDados(self, df_carteira):
         df_cluster = pd.pivot_table(df_carteira, values=['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL'], 
@@ -301,10 +327,9 @@ class Preencher_Carga:
         df = pd.DataFrame(l_data, columns=['Transportadora', 'Tipo', 'm³', 'Qtde'])
         return df
 
-    def listar_bases(self, diretorio, nomeArquivo):
+    def listarBases(self, diretorio, nomeArquivo):
         l_arquivos = os.listdir(diretorio)
         l_datas = []
-        time.sleep(1)
         for arquivo in l_arquivos:
             if any(nome in arquivo for nome in nomeArquivo):
                 data = os.path.getmtime(os.path.join(os.path.realpath(diretorio), arquivo))
@@ -317,8 +342,9 @@ class Preencher_Carga:
             if nomeArquivo[2] in arquivo[1]: frota = os.path.join(os.path.realpath(diretorio), arquivo[1])
             if nomeArquivo[3] in arquivo[1]: lista = os.path.join(os.path.realpath(diretorio), arquivo[1])
             if nomeArquivo[4] in arquivo[1]: suprimentos = os.path.join(os.path.realpath(diretorio), arquivo[1])
+            if nomeArquivo[5] in arquivo[1]: ddeSupply = os.path.join(os.path.realpath(diretorio), arquivo[1])
             
-        return carteira, fechamento, frota, lista, suprimentos
+        return carteira, fechamento, frota, lista, suprimentos, ddeSupply
 
     def reordenarColunas(self, df, lista):
         df = df.reindex(
@@ -341,6 +367,16 @@ class Preencher_Carga:
     def alterarTipo(self, df, tipos):
         df = df.astype(tipos, errors='ignore')
         return df
+
+    def gerarSaida(self, df_carteira):
+        df_carteira = df_carteira.replace(
+            {'QTDE': '.', 'CUBAGEM TOTAL': '.', 'CUSTO MEDIO TOTAL': '.', 
+            'QTD_CLUSTER': '.', 'CUB_TTL_CLUSTER': '.', 'CUSTO_MED_TTL_CLUSTER': '.',
+            'QTD_FILIAL': '.', 'CUB_TTL_FILIAL': '.', 'CUSTO_MED_TTL_FILIAL': '.'}, value=',', regex=True)
+
+        df_carteira = self.alterarTipo(df_carteira, str)
+
+        df_carteira.to_csv(self.destino + 'Base_carteira.csv', index=False, sep=";", encoding='latin-1')
 
 if __name__ == '__main__':
     executa = Preencher_Carga()
