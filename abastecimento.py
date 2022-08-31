@@ -196,21 +196,24 @@ class Preencher_Carga:
         # df_lista = pd.read_excel(self.lista)
         df_suprimentos = pd.read_csv(self.suprimentos, sep=";", header=0, encoding='latin-1', dtype=str)
         
-        df_reordena = ['CLUSTER', 'DESTINO', 'GH', 'FECHAMENTO 1200', 'DIA ENTREGA LOJA', 'FREQ', 'POSTO DE ASSIST', 
-            'TRANSIT POINT', 'OBSERVAÇÃO', 'TIPOS DE VEICULOS (PLANO)', 'TIPOS DE VEICULOS (CAPACIDADE LOJA)']
+        df_reordena = ['CLUSTER', 'DESTINO', 'GH', 'FECHAMENTO 1200', 'DIA ENTREGA LOJA',
+            'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'FREQ', 'POSTO DE ASSIST', 'TRANSIT POINT', 
+            'OBSERVAÇÃO', 'TIPOS DE VEICULOS (PLANO)', 'TIPOS DE VEICULOS (CAPACIDADE LOJA)']
 
         self.validarColunas(df_fechamento, df_reordena)
 
         df_fechamento = self.reordenarColunas(df_fechamento, df_reordena)
 
-        altera_coluna = {'DESTINO': str, 'GH': int,'FREQ': int, 'POSTO DE ASSIST': float, 'TRANSIT POINT': float}
+        altera_coluna = {'DESTINO': str, 'GH': int, 
+            'SEG': int, 'TER': int, 'QUA': int, 'QUI': int, 'SEX': int, 'FREQ': int, 
+            'POSTO DE ASSIST': float, 'TRANSIT POINT': float}
         df_fechamento = self.alterarTipo(df_fechamento, altera_coluna)
-
+        renomear_coluna = {'SEG': 'CUB SEG', 'TER': 'CUB TER', 'QUA': 'CUB QUA', 'QUI': 'CUB QUI', 'SEX': 'CUB SEX'}
+        df_fechamento = self.renomearColunas(df_fechamento, renomear_coluna)
         # df_reordena = ['Cluster', 'FILIAL', 'GH', 'TRANSP.', 'Freq.', 'HORÁRIO CARREGAMENTO', 'TRANSPORTADOR', 'OBSERVAÇÃO']
         # df_lista = self.reordenarColunas(df_lista, df_reordena)
 
         df_reordena = ['FIL PTO', 'DT CARGA', 'CUBAGEM']
-
         self.validarColunas(df_suprimentos, df_reordena)
 
         df_suprimentos = self.reordenarColunas(df_suprimentos, df_reordena)
@@ -227,7 +230,7 @@ class Preencher_Carga:
         
     def tratarDados(self, df_carteira, df_fechamento, df_plano, df_suprimentos, df_ddeSupply):
         df_carteira = pd.merge(df_carteira, df_fechamento,
-            how='left', left_on='FILIAL DESTINO', right_on='DESTINO', )\
+            how='left', left_on='FILIAL DESTINO', right_on='DESTINO')\
             .drop(columns = ['DESTINO', 'DIA ENTREGA LOJA', 'DD Aging'])
 
         df_carteira = pd.merge(df_carteira, df_ddeSupply,
@@ -312,7 +315,7 @@ class Preencher_Carga:
     def fechamentoPlano(self, df_1):
         df_1 = pd.DataFrame(
             {'QTDE_DIN':
-                df_1.groupby(['CLUSTER', 'FECHAMENTO 1200'])['OBSERVAÇÃO'].nunique()})\
+                df_1.groupby(['CLUSTER', 'DIA ENTREGA LOJA'])['OBSERVAÇÃO'].nunique()})\
             .reset_index()
 
         df_dia_semana = pd.DataFrame(
@@ -322,14 +325,19 @@ class Preencher_Carga:
         
         dia_semana = ['FCH_SEG', 'FCH_TER', 'FCH_QUA', 'FCH_QUI', 'FCH_SEX']
         for ds in dia_semana:
-            df_ds = df_1[df_1['FECHAMENTO 1200'].str.contains(ds[-3:])]
+            df_ds = df_1[df_1['DIA ENTREGA LOJA'].str.contains(ds[-3:])]
             df_ds = pd.DataFrame(
                 {'%s'%(ds):
                     df_ds.groupby('CLUSTER')['QTDE_DIN'].sum()})\
                 .reset_index()
             df_dia_semana = pd.merge(df_dia_semana, df_ds, how='left', on='CLUSTER')
+        
+        altera_coluna = {'FCH_SEG': int, 'FCH_TER': int, 'FCH_QUA': int, 'FCH_QUI': int, 'FCH_SEX': int, 'FCH_TTL': int} 
+        df_dia_semana = self.alterarTipo(df_dia_semana, altera_coluna)
 
         df_dia_semana.fillna(0, inplace=True)
+
+        df_dia_semana.to_csv(self.destino + 'Base_fechamento.csv', index=False, sep=";", encoding='latin-1')
 
         return df_dia_semana
 
@@ -424,16 +432,33 @@ class Preencher_Carga:
         if len(listaNf) > 0: self.sair(listaNf)
 
     def gerarSaida(self, df):
+        df.fillna(0, inplace=True)
+        # df.replace("nan", 0)
         df = self.alterarTipo(df, str)
+
+        df_reordena = ['TIPO DE ENTRADA DO ITEM', 'PRIORIDADE', 'CLUSTER', 'OBSERVAÇÃO', 'GH', 
+        'FILIAL ENTREGA', 'FILIAL DESTINO', 'MERCADORIA', 'DESCRICAO', 'ESTOQ.FIL', 
+        'QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTD_FILIAL', 'CUB_TTL_FILIAL', 'CUSTO_MED_TTL_FILIAL', 'QTD_CLUSTER', 'CUB_TTL_CLUSTER', 'CUSTO_MED_TTL_CLUSTER', 
+        'TIPOS DE VEICULOS (PLANO)', 'TIPOS DE VEICULOS (CAPACIDADE LOJA)', 'FECHAMENTO 1200', 'FREQ', 'FCH_TTL', 
+        'CUB SEG', 'FCH_SEG', 'CUB TER', 'FCH_TER', 'CUB QUA', 'FCH_QUA', 'CUB QUI', 'FCH_QUI', 'CUB SEX', 'FCH_SEX', 
+        'SUPR. CUB', 'POSTO DE ASSIST', 'TRANSIT POINT', 'DDV_FUTURO', 'DDV_SO', 'CLASSIFICACAO', 'SINALIZADOR', 
+        'Aging DD', 'MUNICIPIO', 'UF', 'TIPO ITEM', 'SETOR', 'CHIP', 'SITUACAO', 'TIPO PEDIDO', 'PEDIDO DE VENDA', ' PEDIDO', 
+        'DATA ENTRADA', 'DT CARGA PTO', 'CARGA PTO', 'TIPO DE CARGA', 'CARGA ENTREGA', 'BOX', 'DT.INCLUSAO CARGA.ETG', 'STATUS DA CARGA']
+        
+        self.validarColunas(df, df_reordena)
+        df = self.reordenarColunas(df, df_reordena) 
+
         col_replace = ['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 
             'QTD_CLUSTER', 'CUB_TTL_CLUSTER', 'CUSTO_MED_TTL_CLUSTER',
-            'QTD_FILIAL', 'CUB_TTL_FILIAL', 'CUSTO_MED_TTL_FILIAL', 'POSTO DE ASSIST', 'TRANSIT POINT']
-            
+            'QTD_FILIAL', 'CUB_TTL_FILIAL', 'CUSTO_MED_TTL_FILIAL', 'POSTO DE ASSIST', 'TRANSIT POINT', 'SUPR. CUB',
+            'GH', 'FREQ', 'FCH_SEG', 'FCH_TER', 'FCH_QUA', 'FCH_QUI', 'FCH_SEX', 'FCH_TTL',
+            'CUB SEG', 'CUB TER', 'CUB QUA', 'CUB QUI', 'CUB SEX']
+
         for col in df.columns:
+            df[col] = df[col].str.strip()
             if col in col_replace:
                 df[col] = df[col].str.replace('.', ',', regex=True)
 
-        df.fillna(0, inplace=True)
         while True:
             try:
                 df.to_csv(self.destino + 'Base_resultado.csv', index=False, sep=";", encoding='latin-1')
