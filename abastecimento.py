@@ -14,15 +14,14 @@ class Preencher_Carga:
         self.inicio = timeit.default_timer()
 
         self.bases = os.getcwd() + "\\Base\\"
+        self.destino = os.getcwd() + "\\Resultado\\"
         self.nomeArquivo = ['CARTEIRA', 'Fechamento', 'Frota', 'Lista', 'A2J315', 'DRP'] 
 
         try:
             self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos, self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
         except Exception as e:
-            logger.error('Falha em obter dados >> %s' % str(e))
+            logger.error('Falha em obter base dados >> %s' % str(e))
             self.sair()
-
-        self.destino = os.getcwd() + "\\Resultado\\"
 
     def exemple():
         # self.lDataInicial = (datetime.now()- timedelta(days=1)).strftime('%d-%m-%Y')
@@ -181,11 +180,14 @@ class Preencher_Carga:
 
         firstColumn = df.columns[0]
         df_reordena = [firstColumn, 'FILIAL', 'CLASSIFICACAO', 'DDV_FUTURO', 'DDV_SO', 'SINALIZADOR']
+
+        self.validarColunas(df, df_reordena)
         df= self.reordenarColunas(df, df_reordena)
 
         df['FILIAL'] = df['FILIAL'].str[-4:]
         df['CHAVE_DDE'] = df['FILIAL'] + '-' + df[firstColumn]
         df = df.drop(columns=[firstColumn, 'FILIAL'])
+
         return df
 
     def dadosAuxiliar(self):
@@ -366,6 +368,13 @@ class Preencher_Carga:
                 l_datas.append((data, arquivo))
         l_datas.sort()
 
+        carteira = None
+        fechamento = None 
+        frota = None 
+        lista = None 
+        suprimentos = None 
+        ddeSupply = None
+
         for arquivo in l_datas:
             if nomeArquivo[0] in arquivo[1]: carteira = os.path.join(os.path.realpath(diretorio), arquivo[1])
             if nomeArquivo[1] in arquivo[1]: fechamento = os.path.join(os.path.realpath(diretorio), arquivo[1])
@@ -373,7 +382,14 @@ class Preencher_Carga:
             if nomeArquivo[3] in arquivo[1]: lista = os.path.join(os.path.realpath(diretorio), arquivo[1])
             if nomeArquivo[4] in arquivo[1]: suprimentos = os.path.join(os.path.realpath(diretorio), arquivo[1])
             if nomeArquivo[5] in arquivo[1]: ddeSupply = os.path.join(os.path.realpath(diretorio), arquivo[1])
-            
+
+        if carteira is None: self.sair('Base da Carteira')
+        if fechamento is None: self.sair('Base de Fechamento')
+        if frota is None: self.sair('Base de Frota disponível')
+        # if lista is None: self.sair('Lista')
+        if suprimentos is None: self.sair('Base de Suprimentos')
+        if ddeSupply is None: self.sair('Base DRP Supply')
+
         return carteira, fechamento, frota, lista, suprimentos, ddeSupply
 
     def reordenarColunas(self, df, lista):
@@ -411,7 +427,8 @@ class Preencher_Carga:
         df = self.alterarTipo(df, str)
         col_replace = ['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 
             'QTD_CLUSTER', 'CUB_TTL_CLUSTER', 'CUSTO_MED_TTL_CLUSTER',
-            'QTD_FILIAL', 'CUB_TTL_FILIAL']#, 'CUSTO_MED_TTL_FILIAL', 'POSTO DE ASSIST', ]
+            'QTD_FILIAL', 'CUB_TTL_FILIAL', 'CUSTO_MED_TTL_FILIAL', 'POSTO DE ASSIST', 'TRANSIT POINT']
+            
         for col in df.columns:
             if col in col_replace:
                 df[col] = df[col].str.replace('.', ',', regex=True)
@@ -422,7 +439,7 @@ class Preencher_Carga:
                 df.to_csv(self.destino + 'Base_resultado.csv', index=False, sep=";", encoding='latin-1')
                 break
             except Exception as e:
-                mb.showerror('Favor, fechar base de resultado!', 'Confirmar para tentar novamente.')
+                mb.showerror('Favor, fechar base de resultado.', 'Confirmar para tentar novamente.')
 
 if __name__ == '__main__':
     executa = Preencher_Carga()
