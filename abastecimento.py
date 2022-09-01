@@ -76,7 +76,7 @@ class Preencher_Carga:
         # a
         # a    3
         # dtype: int64
-        # print(df_dia_semana[df_dia_semana['FCH_QUA'] >=1 ])
+        # print(df_dia_semana[df_dia_semana['ETG_QUA'] >=1 ])
         # df = df.filter(regex='CODIGO_ITEM|ITEM')
         # df['FILIAL'] = df['FILIAL'].replace('0021_0', '', regex=True)
         # total = df_carteira[df_carteira['CLUSTER'] == 'SPMTR266'].sum()[['CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']]
@@ -88,10 +88,18 @@ class Preencher_Carga:
         # df['CUSTO'] = df['CUSTO'].map('{:_.2f}'.format)
         # df = df.str.replace(
         #     {'QTDE': '.', 'CUBAGEM TOTAL': '.', 'CUSTO MEDIO TOTAL': '.', 
-        #     'QTD_CLUSTER': '.', 'CUB_TTL_CLUSTER': '.', 'CUSTO_MED_TTL_CLUSTER': '.',
-        #     'QTD_FILIAL': '.', 'CUB_TTL_FILIAL': '.', 'CUSTO_MED_TTL_FILIAL': '.'}, value=',', regex=True)
+        #     'QTD_CLUSTER': '.', 'CUB_CLUSTER': '.', 'CUSTO_CLUSTER': '.',
+        #     'QTD_FILIAL': '.', 'CUB_FILIAL': '.', 'CUSTO_FILIAL': '.'}, value=',', regex=True)
 
         # df = self.alterarTipo(df, str)
+        # df["Rank"] = df[["SaleCount","TotalRevenue"]].apply(tuple,axis=1)\
+        #      .rank(method='dense',ascending=False).astype(int)
+
+        # df.sort_values("Rank")
+        # col1 = df["SaleCount"].astype(str) 
+        # col2 = df["TotalRevenue"].astype(str)
+        # df['Rank'] = (col1+col2).astype(int).rank(method='dense', ascending=False).astype(int)
+        # df.sort_values('Rank')
         pass
     
     def sair(self, msg = ''):
@@ -152,11 +160,14 @@ class Preencher_Carga:
 
         df_carteira = self.reordenarColunas(df_carteira, df_reordena)
 
+        renomear_coluna = {' PEDIDO': 'PEDIDO', 'TIPO DE ENTRADA DO ITEM':'TIPO ENTRADA', 'CUBAGEM TOTAL':'CUB', 'CUSTO MEDIO TOTAL': 'CUSTO'}
+        df_carteira = self.renomearColunas(df_carteira, renomear_coluna)
+        
         filtro = (df_carteira['STATUS DA CARGA'].str.startswith(('AGUARD. NOTA', 'TRANSITO')) | df_carteira['TIPO PEDIDO'].str.startswith(('TE', 'TP')))
         df_carteira = self.droparLinhas(df_carteira, filtro)
 
-        df_carteira = df_carteira.replace({'CUBAGEM TOTAL': ',', 'CUSTO MEDIO TOTAL': ','}, value='.', regex=True)
-        altera_coluna = {'QTDE': int, 'CUBAGEM TOTAL': float, 'CUSTO MEDIO TOTAL': float, 'MERCADORIA': int} 
+        df_carteira = df_carteira.replace({'CUB': ',', 'CUSTO': ','}, value='.', regex=True)
+        altera_coluna = {'QTDE': int, 'CUB': float, 'CUSTO': float, 'MERCADORIA': int} 
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
         df_carteira = self.alterarTipo(df_carteira, {'MERCADORIA': str})
 
@@ -197,19 +208,25 @@ class Preencher_Carga:
         df_suprimentos = pd.read_csv(self.suprimentos, sep=";", header=0, encoding='latin-1', dtype=str)
         
         df_reordena = ['CLUSTER', 'DESTINO', 'GH', 'FECHAMENTO 1200', 'DIA ENTREGA LOJA',
-            'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'FREQ', 'POSTO DE ASSIST', 'TRANSIT POINT', 
+            'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'FREQ', 'SOMA PLANO', 'POSTO DE ASSIST', 'TRANSIT POINT', 
             'OBSERVAÇÃO', 'TIPOS DE VEICULOS (PLANO)', 'TIPOS DE VEICULOS (CAPACIDADE LOJA)']
 
         self.validarColunas(df_fechamento, df_reordena)
-
+        
         df_fechamento = self.reordenarColunas(df_fechamento, df_reordena)
 
         altera_coluna = {'DESTINO': str, 'GH': int, 
-            'SEG': int, 'TER': int, 'QUA': int, 'QUI': int, 'SEX': int, 'FREQ': int, 
+            'SEG': float, 'TER': float, 'QUA': float, 'QUI': float, 'SEX': float, 'FREQ': float, 'SOMA PLANO': float,
             'POSTO DE ASSIST': float, 'TRANSIT POINT': float}
         df_fechamento = self.alterarTipo(df_fechamento, altera_coluna)
-        renomear_coluna = {'SEG': 'CUB SEG', 'TER': 'CUB TER', 'QUA': 'CUB QUA', 'QUI': 'CUB QUI', 'SEX': 'CUB SEX'}
+
+        renomear_coluna = {'SEG': 'CUB SEG', 'TER': 'CUB TER', 'QUA': 'CUB QUA', 'QUI': 'CUB QUI', 'SEX': 'CUB SEX',
+            'SOMA PLANO': 'CUB SEMANA', 'POSTO DE ASSIST': 'CUB PA', 'TRANSIT POINT': 'CUB TP', 
+            'TIPOS DE VEICULOS (PLANO)': 'VEICULO PLANO', 'TIPOS DE VEICULOS (CAPACIDADE LOJA)':'VEICULO LOJA'}
         df_fechamento = self.renomearColunas(df_fechamento, renomear_coluna)
+
+        df_fechamento['DESTINO'] = ('000' + df_fechamento['DESTINO']).str[-4:]
+
         # df_reordena = ['Cluster', 'FILIAL', 'GH', 'TRANSP.', 'Freq.', 'HORÁRIO CARREGAMENTO', 'TRANSPORTADOR', 'OBSERVAÇÃO']
         # df_lista = self.reordenarColunas(df_lista, df_reordena)
 
@@ -217,13 +234,14 @@ class Preencher_Carga:
         self.validarColunas(df_suprimentos, df_reordena)
 
         df_suprimentos = self.reordenarColunas(df_suprimentos, df_reordena)
-        df_suprimentos = self.renomearColunas(df_suprimentos, {'CUBAGEM':'SUPR. CUB'})
+        df_suprimentos = self.renomearColunas(df_suprimentos, {'CUBAGEM':'CUB SUPR'})
 
-        df_suprimentos = df_suprimentos.replace({'SUPR. CUB': ','}, value='.', regex=True)
+        df_suprimentos = df_suprimentos.replace({'CUB SUPR': ','}, value='.', regex=True)
         
-        altera_coluna = {'FIL PTO': str, 'DT CARGA': str, 'SUPR. CUB': float}
+        altera_coluna = {'FIL PTO': str, 'DT CARGA': str, 'CUB SUPR': float}
         df_suprimentos = self.alterarTipo(df_suprimentos, altera_coluna)
 
+        df_suprimentos['FIL PTO'] = ('000' + df_suprimentos['FIL PTO']).str[-4:]
         df_suprimentos['CHAVE'] = df_suprimentos['FIL PTO'] + "-" + df_suprimentos['DT CARGA']
 
         return df_fechamento, df_frota, df_suprimentos
@@ -231,7 +249,9 @@ class Preencher_Carga:
     def tratarDados(self, df_carteira, df_fechamento, df_plano, df_suprimentos, df_ddeSupply):
         df_carteira = pd.merge(df_carteira, df_fechamento,
             how='left', left_on='FILIAL DESTINO', right_on='DESTINO')\
-            .drop(columns = ['DESTINO', 'DIA ENTREGA LOJA', 'DD Aging'])
+            .drop(columns = ['DESTINO', 'DD Aging'])
+        
+        df_carteira['CLUSTER'].fillna('SEM CLUSTER', inplace=True)
 
         df_carteira = pd.merge(df_carteira, df_ddeSupply,
             how='left', on='CHAVE_DDE')\
@@ -252,15 +272,15 @@ class Preencher_Carga:
         df_carteira = pd.merge(df_carteira, df_destino,
             how='left', on='FILIAL DESTINO')
         
-        df_carteira = df_carteira.replace({'QTDE':',', 'CUBAGEM TOTAL':',', 'CUSTO MEDIO TOTAL':','}, value='.', regex=True)
+        df_carteira = df_carteira.replace({'QTDE':',', 'CUB':',', 'CUSTO':','}, value='.', regex=True)
         
         altera_coluna = {'STATUS DA CARGA': str, 
             'FILIAL DESTINO': str, 'DT CARGA PTO': str, 
             'DATA ENTRADA': str, 'TIPO PEDIDO': str,
-            'QTDE': int, 'CUBAGEM TOTAL': float, 'CUSTO MEDIO TOTAL': float}
+            'QTDE': int, 'CUB': float, 'CUSTO': float}
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
-        ordenar_coluna = ['CLUSTER', 'FILIAL DESTINO', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']
+        ordenar_coluna = ['RANK_CLUSTER', 'RANK_FILIAL', 'CUB', 'CUSTO', 'QTDE']
         df_carteira = self.ordenarLinhas(df_carteira, ordenar_coluna, False)
 
         df_carteira = self.definirPrioridade(df_carteira)
@@ -268,32 +288,36 @@ class Preencher_Carga:
         return df_carteira
 
     def agruparDados(self, df_carteira):
-        df_cluster = pd.pivot_table(df_carteira, values=['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL'], 
+        df_cluster = pd.pivot_table(df_carteira, values=['QTDE', 'CUB', 'CUSTO'], 
             index= ['CLUSTER'], 
-            aggfunc={'QTDE' : np.sum, 'CUBAGEM TOTAL': np.sum, 'CUSTO MEDIO TOTAL': np.sum},
+            aggfunc={'QTDE' : np.sum, 'CUB': np.sum, 'CUSTO': np.sum},
             fill_value=0)
         df_cluster = self.renomearColunas(df_cluster, 
-            {'QTDE': 'QTD_CLUSTER', 'CUBAGEM TOTAL': 'CUB_TTL_CLUSTER', 'CUSTO MEDIO TOTAL': 'CUSTO_MED_TTL_CLUSTER'})
+            {'QTDE': 'QTD_CLUSTER', 'CUB':      'CUB_CLUSTER', 'CUSTO': 'CUSTO_CLUSTER'})
         
-        df_destino = pd.pivot_table(df_carteira, values=['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL'], 
+        df_cluster['RANK_CLUSTER'] = df_cluster['CUB_CLUSTER'].rank(na_option='bottom')
+
+        df_destino = pd.pivot_table(df_carteira, values=['QTDE', 'CUB', 'CUSTO'], 
             index= ['FILIAL DESTINO'], 
-            aggfunc={'QTDE' : np.sum, 'CUBAGEM TOTAL': np.sum, 'CUSTO MEDIO TOTAL': np.sum},
+            aggfunc={'QTDE' : np.sum, 'CUB': np.sum, 'CUSTO': np.sum},
             fill_value=0)
         df_destino = self.renomearColunas(df_destino, 
-            {'QTDE': 'QTD_FILIAL', 'CUBAGEM TOTAL': 'CUB_TTL_FILIAL', 'CUSTO MEDIO TOTAL': 'CUSTO_MED_TTL_FILIAL'})
+            {'QTDE': 'QTD_FILIAL', 'CUB': 'CUB_FILIAL', 'CUSTO': 'CUSTO_FILIAL'})
+
+        df_destino['RANK_FILIAL'] = df_destino['CUB_FILIAL'].rank(na_option='bottom')
 
         return df_cluster, df_destino
 
     def definirPrioridade(self, df):
         conditions = [
             (df['TIPO PEDIDO'].isin(['PV', 'RR'])), 
-            (df['TIPO DE ENTRADA DO ITEM'].str.strip() == 'REQ.SUPPLY'),
+            (df['TIPO ENTRADA'].str.strip() == 'REQ.SUPPLY'),
             (df['SETOR'].str.strip() == 'TELEFONIA CELULAR'),
             (df['SETOR'].str.strip().isin(['TVS', 'TABLETS', 'INFORMATICA'])),
             (df['SINALIZADOR'].isin(['0 - ESTOQUE ZERO', '1 - MUITO BAIXO'])),
             (df['Aging DD'].isin(['8', '9', '10 a 15', '16 a 20', '21 a 25', '>25']))
         ]
-        result = ['0.PV', '1.Lista_Supply', '2.Telefonia', '3.Tecnologia', '4.DDE_Baixo', '5.Aging']
+        result = ['0.Pv', '1.Lista_Supply', '2.Telefonia', '3.Tecnologia', '4.Baixo_dde', '5.Aging']
 
         df['PRIORIDADE'] = np.select(conditions, result, ['6.Dentro_Aging'])
 
@@ -319,11 +343,11 @@ class Preencher_Carga:
             .reset_index()
 
         df_dia_semana = pd.DataFrame(
-                {'FCH_TTL':
+                {'ETG_TTL':
                     df_1.groupby('CLUSTER')['QTDE_DIN'].sum()})\
                 .reset_index()
         
-        dia_semana = ['FCH_SEG', 'FCH_TER', 'FCH_QUA', 'FCH_QUI', 'FCH_SEX']
+        dia_semana = ['ETG_SEG', 'ETG_TER', 'ETG_QUA', 'ETG_QUI', 'ETG_SEX']
         for ds in dia_semana:
             df_ds = df_1[df_1['DIA ENTREGA LOJA'].str.contains(ds[-3:])]
             df_ds = pd.DataFrame(
@@ -332,12 +356,10 @@ class Preencher_Carga:
                 .reset_index()
             df_dia_semana = pd.merge(df_dia_semana, df_ds, how='left', on='CLUSTER')
         
-        altera_coluna = {'FCH_SEG': int, 'FCH_TER': int, 'FCH_QUA': int, 'FCH_QUI': int, 'FCH_SEX': int, 'FCH_TTL': int} 
+        altera_coluna = {'ETG_SEG': int, 'ETG_TER': int, 'ETG_QUA': int, 'ETG_QUI': int, 'ETG_SEX': int, 'ETG_TTL': int} 
         df_dia_semana = self.alterarTipo(df_dia_semana, altera_coluna)
 
         df_dia_semana.fillna(0, inplace=True)
-
-        df_dia_semana.to_csv(self.destino + 'Base_fechamento.csv', index=False, sep=";", encoding='latin-1')
 
         return df_dia_semana
 
@@ -435,24 +457,32 @@ class Preencher_Carga:
         df.fillna(0, inplace=True)
         # df.replace("nan", 0)
         df = self.alterarTipo(df, str)
+        
+        df_reordena = ['TIPO ENTRADA', 'RANK_CLUSTER', 'CLUSTER', 'OBSERVAÇÃO', 'GH', 'RANK_FILIAL', 'FILIAL DESTINO', 
+        'PRIORIDADE', 'MERCADORIA', 'DESCRICAO', 'QTDE', 'CUB', 'CUSTO', 'QTD_FILIAL', 'CUB_FILIAL', 'CUSTO_FILIAL', 
+        'QTD_CLUSTER', 'CUB_CLUSTER', 'CUSTO_CLUSTER', 'VEICULO PLANO', 'VEICULO LOJA', 
+        'FECHAMENTO 1200', 'DIA ENTREGA LOJA', 'FREQ', 'CUB SEMANA', 'ETG_TTL', 
+        'CUB SEG', 'ETG_SEG', 'CUB TER', 'ETG_TER', 'CUB QUA', 'ETG_QUA', 'CUB QUI', 'ETG_QUI', 'CUB SEX', 'ETG_SEX', 
+        'CUB SUPR', 'CUB PA', 'CUB TP', 'CLASSIFICACAO', 'SINALIZADOR', 
+        'Aging DD', 'TIPO ITEM', 'SETOR', 'CHIP', 'SITUACAO', 'TIPO PEDIDO', 'PEDIDO DE VENDA', 'PEDIDO', 
+        'DATA ENTRADA', 'DT CARGA PTO', 'CARGA PTO']
 
-        df_reordena = ['TIPO DE ENTRADA DO ITEM', 'PRIORIDADE', 'CLUSTER', 'OBSERVAÇÃO', 'GH', 
-        'FILIAL ENTREGA', 'FILIAL DESTINO', 'MERCADORIA', 'DESCRICAO', 'ESTOQ.FIL', 
-        'QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTD_FILIAL', 'CUB_TTL_FILIAL', 'CUSTO_MED_TTL_FILIAL', 'QTD_CLUSTER', 'CUB_TTL_CLUSTER', 'CUSTO_MED_TTL_CLUSTER', 
-        'TIPOS DE VEICULOS (PLANO)', 'TIPOS DE VEICULOS (CAPACIDADE LOJA)', 'FECHAMENTO 1200', 'FREQ', 'FCH_TTL', 
-        'CUB SEG', 'FCH_SEG', 'CUB TER', 'FCH_TER', 'CUB QUA', 'FCH_QUA', 'CUB QUI', 'FCH_QUI', 'CUB SEX', 'FCH_SEX', 
-        'SUPR. CUB', 'POSTO DE ASSIST', 'TRANSIT POINT', 'DDV_FUTURO', 'DDV_SO', 'CLASSIFICACAO', 'SINALIZADOR', 
-        'Aging DD', 'MUNICIPIO', 'UF', 'TIPO ITEM', 'SETOR', 'CHIP', 'SITUACAO', 'TIPO PEDIDO', 'PEDIDO DE VENDA', ' PEDIDO', 
-        'DATA ENTRADA', 'DT CARGA PTO', 'CARGA PTO', 'TIPO DE CARGA', 'CARGA ENTREGA', 'BOX', 'DT.INCLUSAO CARGA.ETG', 'STATUS DA CARGA']
+        """
+        'FILIAL ENTREGA', 'ESTOQ.FIL',
+        DDV_FUTURO', 'DDV_SO'
+        'MUNICIPIO', 'UF',
+        , 'TIPO DE CARGA', 'CARGA ENTREGA', 'BOX', 'DT.INCLUSAO CARGA.ETG', 'STATUS DA CARGA'
+        ]
+        """
         
         self.validarColunas(df, df_reordena)
         df = self.reordenarColunas(df, df_reordena) 
 
-        col_replace = ['QTDE', 'CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 
-            'QTD_CLUSTER', 'CUB_TTL_CLUSTER', 'CUSTO_MED_TTL_CLUSTER',
-            'QTD_FILIAL', 'CUB_TTL_FILIAL', 'CUSTO_MED_TTL_FILIAL', 'POSTO DE ASSIST', 'TRANSIT POINT', 'SUPR. CUB',
-            'GH', 'FREQ', 'FCH_SEG', 'FCH_TER', 'FCH_QUA', 'FCH_QUI', 'FCH_SEX', 'FCH_TTL',
-            'CUB SEG', 'CUB TER', 'CUB QUA', 'CUB QUI', 'CUB SEX']
+        col_replace = ['QTDE', 'CUB', 'CUSTO', 
+            'QTD_CLUSTER', 'CUB_CLUSTER', 'CUSTO_CLUSTER',
+            'QTD_FILIAL', 'CUB_FILIAL', 'CUSTO_FILIAL', 'POSTO DE ASSIST', 'TRANSIT POINT', 'CUB SUPR',
+            'GH', 'FREQ', 'ETG_SEG', 'ETG_TER', 'ETG_QUA', 'ETG_QUI', 'ETG_SEX', 'ETG_TTL', 'CUB SEMANA',
+            'CUB SEG', 'CUB TER', 'CUB QUA', 'CUB QUI', 'CUB SEX', 'RANK_CLUSTER', 'RANK_FILIAL']
 
         for col in df.columns:
             df[col] = df[col].str.strip()
