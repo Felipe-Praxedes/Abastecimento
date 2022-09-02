@@ -280,6 +280,8 @@ class Preencher_Carga:
             'QTDE': int, 'CUB': float, 'CUSTO': float}
         df_carteira = self.alterarTipo(df_carteira, altera_coluna)
 
+        df_carteira['DD ESCOAMENTO'] = df_carteira['CUB_FILIAL'] / df_carteira['CUB SEMANA'] * 7
+
         ordenar_coluna = ['RANK_CLUSTER', 'RANK_FILIAL', 'CUB', 'CUSTO', 'QTDE']
         df_carteira = self.ordenarLinhas(df_carteira, ordenar_coluna, False)
 
@@ -315,11 +317,12 @@ class Preencher_Carga:
             (df['SETOR'].str.strip() == 'TELEFONIA CELULAR'),
             (df['SETOR'].str.strip().isin(['TVS', 'TABLETS', 'INFORMATICA'])),
             (df['SINALIZADOR'].isin(['0 - ESTOQUE ZERO', '1 - MUITO BAIXO'])),
+            (df['DD ESCOAMENTO'] >= 7),
             (df['Aging DD'].isin(['8', '9', '10 a 15', '16 a 20', '21 a 25', '>25']))
         ]
-        result = ['0.Pv', '1.Lista_Supply', '2.Telefonia', '3.Tecnologia', '4.Baixo_dde', '5.Aging']
+        result = ['0.Pv', '1.Lista_Supply', '2.Telefonia', '3.Tecnologia', '4.Baixo_dde', '5.Escoamento_+7DD', '6.Aging']
 
-        df['PRIORIDADE'] = np.select(conditions, result, ['6.Dentro_Aging'])
+        df['PRIORIDADE'] = np.select(conditions, result, ['7.Normal'])
 
         return df
 
@@ -461,7 +464,7 @@ class Preencher_Carga:
         df_reordena = ['TIPO ENTRADA', 'RANK_CLUSTER', 'CLUSTER', 'OBSERVAÇÃO', 'GH', 'RANK_FILIAL', 'FILIAL DESTINO', 
         'PRIORIDADE', 'MERCADORIA', 'DESCRICAO', 'QTDE', 'CUB', 'CUSTO', 'QTD_FILIAL', 'CUB_FILIAL', 'CUSTO_FILIAL', 
         'QTD_CLUSTER', 'CUB_CLUSTER', 'CUSTO_CLUSTER', 'VEICULO PLANO', 'VEICULO LOJA', 
-        'FECHAMENTO 1200', 'DIA ENTREGA LOJA', 'FREQ', 'CUB SEMANA', 'ETG_TTL', 
+        'FECHAMENTO 1200', 'DIA ENTREGA LOJA', 'DD ESCOAMENTO', 'FREQ', 'CUB SEMANA', 'ETG_TTL', 
         'CUB SEG', 'ETG_SEG', 'CUB TER', 'ETG_TER', 'CUB QUA', 'ETG_QUA', 'CUB QUI', 'ETG_QUI', 'CUB SEX', 'ETG_SEX', 
         'CUB SUPR', 'CUB PA', 'CUB TP', 'CLASSIFICACAO', 'SINALIZADOR', 
         'Aging DD', 'TIPO ITEM', 'SETOR', 'CHIP', 'SITUACAO', 'TIPO PEDIDO', 'PEDIDO DE VENDA', 'PEDIDO', 
@@ -480,7 +483,7 @@ class Preencher_Carga:
 
         col_replace = ['QTDE', 'CUB', 'CUSTO', 
             'QTD_CLUSTER', 'CUB_CLUSTER', 'CUSTO_CLUSTER',
-            'QTD_FILIAL', 'CUB_FILIAL', 'CUSTO_FILIAL', 'POSTO DE ASSIST', 'TRANSIT POINT', 'CUB SUPR',
+            'QTD_FILIAL', 'CUB_FILIAL', 'CUSTO_FILIAL', 'CUB PA', 'CUB TP', 'CUB SUPR', 'DD ESCOAMENTO',
             'GH', 'FREQ', 'ETG_SEG', 'ETG_TER', 'ETG_QUA', 'ETG_QUI', 'ETG_SEX', 'ETG_TTL', 'CUB SEMANA',
             'CUB SEG', 'CUB TER', 'CUB QUA', 'CUB QUI', 'CUB SEX', 'RANK_CLUSTER', 'RANK_FILIAL']
 
