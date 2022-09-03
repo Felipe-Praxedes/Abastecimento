@@ -206,85 +206,6 @@ class Preencher_Carga:
             logger.error('Falha em obter base dados >> %s' % str(e))
             self.sair()
 
-    def exemple(self):
-        # self.lDataInicial = (datetime.now()- timedelta(days=1)).strftime('%d-%m-%Y')
-        # lista_romaneio = plan['Nro. Romaneio'].to_list() listar itens
-
-        # df[['Cd', 'Comp', 'Item']] = df['Cd    Comp  Item'].str.split('  ', expand=True)
-        # df_carteira.to_excel(self.destino + 'Base_carteira.xlsx', index=False)
-
-        # df['Item'].fillna('-', inplace=True)
-
-        # remove_filiais = df.loc[
-        #     (df['Cd'].str.startswith(('0125', '1088', '1445', '1475', '1522', '1668', '1760', '1850', '1876',
-        #                             '1888', '3200')))]
-
-        # df.drop(remove_filiais.index, axis=0, inplace=True, errors='ignore')
-
-        # df.replace({'Cd': {'0014': '1401'}}, inplace=True)
-
-        # print("Hello to the {} {}".format(var2,var1))
-        # print("Hello to the %s %d " %(var2,var1))
-
-        # df['combo'] = np.select([df.mobile == 'mobile', df.tablet == 'tablet'],
-        #                         ['mobile', 'tablet'],
-        #                         default='other')
-        # # or
-        # df['combo'] = np.where(df.mobile == 'mobile', 'mobile',
-        #                     np.where(df.tablet == 'tablet', 'tablet', 'other'))
-        # def func(row):
-        #     if row['PEDIDO DE VENDA'] >0:
-        #         return '0.PV'
-        #     elif row['tablet'] == 'tablet':
-        #         return 'tablet'
-        #     else:
-        #         return 'other'
-
-        # df_carteira['PRIORIDADE'] = df_carteira.apply(func, axis=1)
-        # data_limite = datetime.strptime(data, '%d.%m.%Y').date()
-
-        # df[(df.a > 1) & (df.a < 3)].sum()
-
-        # df = pd.DataFrame({'a': ['a', 'b', 'a', 'a', 'b', 'c', 'd']})
-        # after = df.groupby('a').size()
-        # >> after
-        # a
-        # a    3
-        # b    2
-        # c    1
-        # d    1
-        # dtype: int64
-
-        # >> after[after > 2]
-        # a
-        # a    3
-        # dtype: int64
-        # print(df_dia_semana[df_dia_semana['ETG_QUA'] >=1 ])
-        # df = df.filter(regex='CODIGO_ITEM|ITEM')
-        # df['FILIAL'] = df['FILIAL'].replace('0021_0', '', regex=True)
-        # total = df_carteira[df_carteira['CLUSTER'] == 'SPMTR266'].sum()[['CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']]
-        # print(total)
-        # df_carteira = df_carteira[df_carteira['FILIAL DESTINO'] == '1402']
-        # df_carteira.to_csv(self.destino + 'Base_dePara.csv', index=False, sep=";", encoding='latin-1')
-
-        # print(df_carteira['CUBAGEM TOTAL'].sum())
-        # df['CUSTO'] = df['CUSTO'].map('{:_.2f}'.format)
-        # df = df.str.replace(
-        #     {'QTDE': '.', 'CUBAGEM TOTAL': '.', 'CUSTO MEDIO TOTAL': '.',
-        #     'QTD_CLUSTER': '.', 'CUB_CLUSTER': '.', 'CUSTO_CLUSTER': '.',
-        #     'QTD_FILIAL': '.', 'CUB_FILIAL': '.', 'CUSTO_FILIAL': '.'}, value=',', regex=True)
-
-        # df = self.alterarTipo(df, str)
-        # df["Rank"] = df[["SaleCount","TotalRevenue"]].apply(tuple,axis=1)\
-        #      .rank(method='dense',ascending=False).astype(int)
-
-        # df.sort_values("Rank")
-        # col1 = df["SaleCount"].astype(str)
-        # col2 = df["TotalRevenue"].astype(str)
-        # df['Rank'] = (col1+col2).astype(int).rank(method='dense', ascending=False).astype(int)
-        # df.sort_values('Rank')
-        pass
-
     def sair(self, msg=''):
         if msg != '':
             logger.error('Dados não encontrado: %s' % msg)
@@ -451,19 +372,30 @@ class Preencher_Carga:
         ddeSupply = None
 
         for arquivo in l_datas:
-            if nomeArquivo[0] in arquivo[1]: carteira = os.path.join(os.path.realpath(diretorio), arquivo[1])
-            if nomeArquivo[1] in arquivo[1]: fechamento = os.path.join(os.path.realpath(diretorio), arquivo[1])
-            if nomeArquivo[2] in arquivo[1]: frota = os.path.join(os.path.realpath(diretorio), arquivo[1])
-            if nomeArquivo[3] in arquivo[1]: lista = os.path.join(os.path.realpath(diretorio), arquivo[1])
-            if nomeArquivo[4] in arquivo[1]: suprimentos = os.path.join(os.path.realpath(diretorio), arquivo[1])
-            if nomeArquivo[5] in arquivo[1]: ddeSupply = os.path.join(os.path.realpath(diretorio), arquivo[1])
+            if nomeArquivo[0] in arquivo[1]:
+                carteira = os.path.join(os.path.realpath(diretorio), arquivo[1])
+            if nomeArquivo[1] in arquivo[1]:
+                fechamento = os.path.join(os.path.realpath(diretorio), arquivo[1])
+            if nomeArquivo[2] in arquivo[1]:
+                frota = os.path.join(os.path.realpath(diretorio), arquivo[1])
+            if nomeArquivo[3] in arquivo[1]:
+                lista = os.path.join(os.path.realpath(diretorio), arquivo[1])
+            if nomeArquivo[4] in arquivo[1]:
+                suprimentos = os.path.join(os.path.realpath(diretorio), arquivo[1])
+            if nomeArquivo[5] in arquivo[1]:
+                ddeSupply = os.path.join(os.path.realpath(diretorio), arquivo[1])
 
-        if carteira is None: self.sair('Base da Carteira')
-        if fechamento is None: self.sair('Base de Fechamento')
-        if frota is None: self.sair('Base de Frota disponível')
+        if carteira is None:
+            self.sair('Base da Carteira')
+        if fechamento is None:
+            self.sair('Base de Fechamento')
+        if frota is None:
+            self.sair('Base de Frota disponível')
         # if lista is None: self.sair('Lista')
-        if suprimentos is None: self.sair('Base de Suprimentos')
-        if ddeSupply is None: self.sair('Base DRP Supply')
+        if suprimentos is None:
+            self.sair('Base de Suprimentos')
+        if ddeSupply is None:
+            self.sair('Base DRP Supply')
 
         return carteira, fechamento, frota, lista, suprimentos, ddeSupply
 
@@ -525,3 +457,83 @@ class Preencher_Carga:
 if __name__ == '__main__':
     executa = Preencher_Carga()
     executa.start()
+
+
+    def exemple(self):
+        # self.lDataInicial = (datetime.now()- timedelta(days=1)).strftime('%d-%m-%Y')
+        # lista_romaneio = plan['Nro. Romaneio'].to_list() listar itens
+
+        # df[['Cd', 'Comp', 'Item']] = df['Cd    Comp  Item'].str.split('  ', expand=True)
+        # df_carteira.to_excel(self.destino + 'Base_carteira.xlsx', index=False)
+
+        # df['Item'].fillna('-', inplace=True)
+
+        # remove_filiais = df.loc[
+        #     (df['Cd'].str.startswith(('0125', '1088', '1445', '1475', '1522', '1668', '1760', '1850', '1876',
+        #                             '1888', '3200')))]
+
+        # df.drop(remove_filiais.index, axis=0, inplace=True, errors='ignore')
+
+        # df.replace({'Cd': {'0014': '1401'}}, inplace=True)
+
+        # print("Hello to the {} {}".format(var2,var1))
+        # print("Hello to the %s %d " %(var2,var1))
+
+        # df['combo'] = np.select([df.mobile == 'mobile', df.tablet == 'tablet'],
+        #                         ['mobile', 'tablet'],
+        #                         default='other')
+        # # or
+        # df['combo'] = np.where(df.mobile == 'mobile', 'mobile',
+        #                     np.where(df.tablet == 'tablet', 'tablet', 'other'))
+        # def func(row):
+        #     if row['PEDIDO DE VENDA'] >0:
+        #         return '0.PV'
+        #     elif row['tablet'] == 'tablet':
+        #         return 'tablet'
+        #     else:
+        #         return 'other'
+
+        # df_carteira['PRIORIDADE'] = df_carteira.apply(func, axis=1)
+        # data_limite = datetime.strptime(data, '%d.%m.%Y').date()
+
+        # df[(df.a > 1) & (df.a < 3)].sum()
+
+        # df = pd.DataFrame({'a': ['a', 'b', 'a', 'a', 'b', 'c', 'd']})
+        # after = df.groupby('a').size()
+        # >> after
+        # a
+        # a    3
+        # b    2
+        # c    1
+        # d    1
+        # dtype: int64
+
+        # >> after[after > 2]
+        # a
+        # a    3
+        # dtype: int64
+        # print(df_dia_semana[df_dia_semana['ETG_QUA'] >=1 ])
+        # df = df.filter(regex='CODIGO_ITEM|ITEM')
+        # df['FILIAL'] = df['FILIAL'].replace('0021_0', '', regex=True)
+        # total = df_carteira[df_carteira['CLUSTER'] == 'SPMTR266'].sum()[['CUBAGEM TOTAL', 'CUSTO MEDIO TOTAL', 'QTDE']]
+        # print(total)
+        # df_carteira = df_carteira[df_carteira['FILIAL DESTINO'] == '1402']
+        # df_carteira.to_csv(self.destino + 'Base_dePara.csv', index=False, sep=";", encoding='latin-1')
+
+        # print(df_carteira['CUBAGEM TOTAL'].sum())
+        # df['CUSTO'] = df['CUSTO'].map('{:_.2f}'.format)
+        # df = df.str.replace(
+        #     {'QTDE': '.', 'CUBAGEM TOTAL': '.', 'CUSTO MEDIO TOTAL': '.',
+        #     'QTD_CLUSTER': '.', 'CUB_CLUSTER': '.', 'CUSTO_CLUSTER': '.',
+        #     'QTD_FILIAL': '.', 'CUB_FILIAL': '.', 'CUSTO_FILIAL': '.'}, value=',', regex=True)
+
+        # df = self.alterarTipo(df, str)
+        # df["Rank"] = df[["SaleCount","TotalRevenue"]].apply(tuple,axis=1)\
+        #      .rank(method='dense',ascending=False).astype(int)
+
+        # df.sort_values("Rank")
+        # col1 = df["SaleCount"].astype(str)
+        # col2 = df["TotalRevenue"].astype(str)
+        # df['Rank'] = (col1+col2).astype(int).rank(method='dense', ascending=False).astype(int)
+        # df.sort_values('Rank')
+        pass
