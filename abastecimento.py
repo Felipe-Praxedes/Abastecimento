@@ -201,8 +201,8 @@ class Preencher_Carga:
         self.nomeArquivo = ['CARTEIRA', 'Fechamento', 'Frota', 'Lista', 'A2J315', 'DRP']
 
         try:
-            self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos, self.ddeSupply = self.listarBases(
-                self.bases, self.nomeArquivo)
+            self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos, \
+                self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
         except Exception as e:
             logger.error('Falha em obter base dados >> %s' % str(e))
             self.sair()
