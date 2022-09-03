@@ -54,7 +54,8 @@ def frotaDisponivel(df):
 
             if 'Transp' not in col and 'Cam' not in row[0] and 'TOTAL' not in row[0]:
                 tipo = 'Local'
-                if 'POLO' in row[0]: tipo = 'Polo'
+                if 'POLO' in row[0]:
+                    tipo = 'Polo'
                 l_data.append({'Transportadora': row[0], 'Tipo': tipo, 'm³': col, 'Qtde': row[x]})
             x += 1
     df = pd.DataFrame(l_data, columns=['Transportadora', 'Tipo', 'm³', 'Qtde'])
@@ -208,7 +209,7 @@ class Preencher_Carga:
 
     def sair(self, msg=''):
         if msg != '':
-            logger.error('Dados não encontrado: %s' % msg)
+            logger.error('Dado não encontrado: %s' % msg)
         fim = timeit.default_timer()
         logger.critical('Finalizado... %ds' % (fim - self.inicio))
         sys.exit()
@@ -280,8 +281,8 @@ class Preencher_Carga:
 
         df_carteira['CHIP'] = np.select(
             [(df_carteira['DESCRICAO'].str.contains('CHIP', na=False)
-              & ~df_carteira['DESCRICAO'].str.contains('CEL', na=False))]
-            , ['Sim'], 'Não')
+              & ~df_carteira['DESCRICAO'].str.contains('CEL', na=False))],
+            ['Sim'], 'Não')
 
         df_carteira['DD Aging'] = \
             (pd.to_datetime(date.today()) - pd.to_datetime(df_carteira['DATA ENTRADA'], format="%d.%m.%Y")).dt.days
@@ -402,11 +403,13 @@ class Preencher_Carga:
     def validarColunas(self, df: object, lista: object) -> object:
         listaNf = []
         for item in lista:
-            if item not in df.columns: listaNf.append(str(item))
+            if item not in df.columns:
+                listaNf.append(str(item))
         # for col in df.columns:
         #     if col not in lista: 
         #         listaNf.append(str(col))
-        if len(listaNf) > 0: self.sair(listaNf)
+        if len(listaNf) > 0:
+            self.sair(listaNf)
 
     def gerarSaida(self, df):
         df.fillna(0, inplace=True)
