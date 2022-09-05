@@ -292,7 +292,8 @@ class Preencher_Carga:
 
         df_carteira = agingEmCarteira(df_carteira)
 
-        print(df_carteira)
+        logger.info(f"Carteira está com {df_carteira['PEDIDO'].nunique()} pedidos")
+        logger.info(f"De {df_carteira['FILIAL DESTINO'].nunique()} lojas distintas")
 
         return df_carteira
 
@@ -308,6 +309,14 @@ class Preencher_Carga:
         df['FILIAL'] = df['FILIAL'].str[-4:]
         df['CHAVE_DDE'] = df['FILIAL'] + '-' + df[firstColumn]
         df = df.drop(columns=[firstColumn, 'FILIAL'])
+
+        print(df.columns)
+
+        lojas_estoque_zero = df.query("SINALIZADOR == '0 - ESTOQUE ZERO'")
+
+        print(lojas_estoque_zero['SINALIZADOR'].nunique())
+
+        print(df['SINALIZADOR'].unique())
 
         return df
 
