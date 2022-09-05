@@ -292,6 +292,8 @@ class Preencher_Carga:
 
         df_carteira = agingEmCarteira(df_carteira)
 
+        print(df_carteira)
+
         return df_carteira
 
     def estoqueLojaSupply(self):
