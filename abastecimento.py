@@ -1,3 +1,4 @@
+import locale
 import os
 import sys
 import timeit
@@ -121,6 +122,9 @@ def fechamentoPlano(df_1):
 
     df_dia_semana.fillna(0, inplace=True)
 
+    print(df_dia_semana.columns)
+    print(df_dia_semana.head(3))
+
     return df_dia_semana
 
 
@@ -202,7 +206,7 @@ class Preencher_Carga:
 
         try:
             self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos, \
-                self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
+            self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
         except Exception as e:
             logger.error('Falha em obter base dados >> %s' % str(e))
             self.sair()
@@ -292,7 +296,19 @@ class Preencher_Carga:
 
         df_carteira = agingEmCarteira(df_carteira)
 
-        logger.info(f"Carteira está com {df_carteira['PEDIDO'].nunique()} pedidos de {df_carteira['FILIAL DESTINO'].nunique()} lojas distintas")
+        custo_total = sum(df_carteira['CUSTO'])
+
+        locale.setlocale(locale.LC_ALL, "pt_BR.UTF-8")
+
+        custo_total = locale.currency(custo_total, grouping=True)
+
+        cubagem_total = sum(df_carteira['CUB'])
+
+        logger.info(
+            f"Valor total em carteira {custo_total} e total de {cubagem_total:.2f} m³ em carteira.")
+
+        logger.info(
+            f"Carteira está com {df_carteira['PEDIDO'].nunique()} pedidos de {df_carteira['FILIAL DESTINO'].nunique()} lojas.")
 
         return df_carteira
 
@@ -315,7 +331,8 @@ class Preencher_Carga:
 
         lojas_distinct = lojas_estoque_zero['CHAVE_DDE'].str[:4]
 
-        logger.info(f"Estoque de loja do Supply possui {sku_estoque_zero.nunique()} SKU's com estoque 0 em {lojas_distinct.nunique()} lojas distintas")
+        logger.info(
+            f"Estoque de loja do Supply possui {sku_estoque_zero.nunique()} SKU's com estoque 0 em {lojas_distinct.nunique()} lojas.")
 
         return df
 
@@ -371,12 +388,13 @@ class Preencher_Carga:
         clusters_grupo_1 = df_fechamento.query("GH == 1")
         clusters_grupo_14 = df_fechamento.query("GH == 14")
 
-        print(clusters_grupo_1['CLUSTER'].nunique())
-        print(clusters_grupo_14['CLUSTER'].nunique())
+        logger.info(
+            f"Cubagem total de suprimentos é de {df_suprimentos['CUB SUPR'].sum():.2f} m³ distribuídos em {df_suprimentos['FIL PTO'].nunique()} lojas.")
 
-        print(df_frota.columns)
-
-        logger.info(f"Cubagem total de suprimentos é de {df_suprimentos['CUB SUPR'].sum():.2f} m³ distribuídos em {df_suprimentos['FIL PTO'].nunique()} lojas distintas")
+        logger.info(
+            f"Planejamento do dia conta com {df_fechamento['CLUSTER'].nunique()} clusters totais, sendo {clusters_grupo_1['CLUSTER'].nunique()} "
+            f"clusters locais e {clusters_grupo_14['CLUSTER'].nunique()} clusters de polo"
+        )
 
         return df_fechamento, df_frota, df_suprimentos
 
