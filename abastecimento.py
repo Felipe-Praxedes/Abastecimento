@@ -292,8 +292,7 @@ class Preencher_Carga:
 
         df_carteira = agingEmCarteira(df_carteira)
 
-        logger.info(f"Carteira está com {df_carteira['PEDIDO'].nunique()} pedidos")
-        logger.info(f"De {df_carteira['FILIAL DESTINO'].nunique()} lojas distintas")
+        logger.info(f"Carteira está com {df_carteira['PEDIDO'].nunique()} pedidos de {df_carteira['FILIAL DESTINO'].nunique()} lojas distintas")
 
         return df_carteira
 
@@ -310,13 +309,13 @@ class Preencher_Carga:
         df['CHAVE_DDE'] = df['FILIAL'] + '-' + df[firstColumn]
         df = df.drop(columns=[firstColumn, 'FILIAL'])
 
-        print(df.columns)
-
         lojas_estoque_zero = df.query("SINALIZADOR == '0 - ESTOQUE ZERO'")
 
-        print(lojas_estoque_zero['SINALIZADOR'].nunique())
+        sku_estoque_zero = lojas_estoque_zero['CHAVE_DDE'].str[-7:]
 
-        print(df['SINALIZADOR'].unique())
+        lojas_distinct = lojas_estoque_zero['CHAVE_DDE'].str[:4]
+
+        logger.info(f"Estoque de loja do Supply possui {sku_estoque_zero.nunique()} SKU's com estoque 0 em {lojas_distinct.nunique()} lojas distintas")
 
         return df
 
@@ -364,6 +363,20 @@ class Preencher_Carga:
 
         df_suprimentos['FIL PTO'] = ('000' + df_suprimentos['FIL PTO']).str[-4:]
         df_suprimentos['CHAVE'] = df_suprimentos['FIL PTO'] + "-" + df_suprimentos['DT CARGA']
+
+        # print(df_fechamento.columns)
+
+        # print(df_fechamento['CLUSTER'].nunique())
+
+        clusters_grupo_1 = df_fechamento.query("GH == 1")
+        clusters_grupo_14 = df_fechamento.query("GH == 14")
+
+        print(clusters_grupo_1['CLUSTER'].nunique())
+        print(clusters_grupo_14['CLUSTER'].nunique())
+
+        print(df_frota.columns)
+
+        logger.info(f"Cubagem total de suprimentos é de {df_suprimentos['CUB SUPR'].sum():.2f} m³ distribuídos em {df_suprimentos['FIL PTO'].nunique()} lojas distintas")
 
         return df_fechamento, df_frota, df_suprimentos
 
@@ -464,7 +477,7 @@ class Preencher_Carga:
             try:
                 df.to_csv(self.destino + 'Base_resultado.csv', index=False, sep=";", encoding='latin-1')
                 break
-            except BaseException as e:
+            except Exception as e:
                 mb.showerror('Favor, fechar base de resultado.', 'Confirmar para tentar novamente.')
 
 
