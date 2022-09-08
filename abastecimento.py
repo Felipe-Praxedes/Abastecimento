@@ -209,6 +209,9 @@ def preencherCargas(df):
         dde_loja = ['QTD_FILIAL'][i]
         tipo_item = df['TIPO ITEM'][i]
         aging_pv = df['Aging DD'][i]
+        situacao_item = df['SITUACAO'][i]
+        rank_loja = df['RANK_FILIAL'][i]
+        rank_cluster = df['RANK_CLUSTER'][i]
 
 
 
