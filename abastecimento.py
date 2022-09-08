@@ -56,25 +56,22 @@ def frotaDisponivel(df):
                 tipo = 'Local'
                 if 'POLO' in row[0]:
                     tipo = 'Polo'
-                l_data.append({'Transportadora': row[0], 'Tipo': tipo, 'm³': col, 'Qtde': row[x]})
+                l_data.append({'Transportadora': row[0], 'Tipo': tipo, 'CUB': col, 'Qtde': row[x]})
             x += 1
-    df = pd.DataFrame(l_data, columns=['Transportadora', 'Tipo', 'm³', 'Qtde'])
+    df = pd.DataFrame(l_data, columns=['Transportadora', 'Tipo', 'CUB', 'Qtde'])
 
     df_veiculo = df  # Se quiser usar veiculo
-    df = pd.DataFrame({'Qtde': df.groupby(['Tipo', 'm³'])['Qtde'].sum()}).reset_index()
-
-    print(df.head(3))
-    print(df.columns)
+    df = pd.DataFrame({'Qtde': df.groupby(['Tipo', 'CUB'])['Qtde'].sum()}).reset_index()
 
     qtde_frota_local = df.query("Tipo == 'Local'")
-
-    qtde_frota_local = qtde_frota_local.query(f"{qtde_frota_local.columns[1]} != 'Total'")
-
-    print(qtde_frota_local.columns)
-
-    print(qtde_frota_local.head(3))
-
+    qtde_frota_local = qtde_frota_local.query("CUB != 'Total'")
+    qtde_frota_polo = df.query("Tipo == 'Polo'")
+    qtde_frota_polo = qtde_frota_polo.query("CUB != 'Total'")
     qtde_frota_local = sum(qtde_frota_local['Qtde'])
+    qtde_frota_polo = sum(qtde_frota_polo['Qtde'])
+
+    logger.info(f"Quantidade de frota(s) local(is) disponível(is): {qtde_frota_local:.0f}")
+    logger.info(f"Quantidade de frota(s) de polo disponível(is): {qtde_frota_polo:.0f}")
 
     return df
 
@@ -198,6 +195,12 @@ def tratarDados(df_carteira, df_fechamento, df_plano, df_suprimentos, df_ddeSupp
     df_carteira = definirPrioridade(df_carteira)
 
     return df_carteira
+
+
+def preencherCargas(df):
+    for i in df.index:
+        cluster = df['CLUSTER'][i]
+        print(cluster)
 
 
 class Preencher_Carga:
@@ -503,6 +506,8 @@ class Preencher_Carga:
                 break
             except Exception as e:
                 mb.showerror('Favor, fechar base de resultado.', 'Confirmar para tentar novamente.')
+
+        preencherCargas(df)
 
 
 if __name__ == '__main__':
