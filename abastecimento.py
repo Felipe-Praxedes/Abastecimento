@@ -4,7 +4,6 @@ import sys
 import timeit
 from datetime import date
 from tkinter import messagebox as mb
-
 import numpy as np
 import pandas as pd
 from loguru import logger
@@ -211,7 +210,7 @@ class Preencher_Carga:
 
         try:
             self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos, \
-                self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
+            self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
         except Exception as e:
             logger.error('Falha em obter base dados >> %s' % str(e))
             self.sair()
