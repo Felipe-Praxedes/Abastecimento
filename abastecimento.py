@@ -200,7 +200,7 @@ def tratarDados(df_carteira, df_fechamento, df_plano, df_suprimentos, df_ddeSupp
 def preencherCargas(dataframe):
     for i in dataframe.index:
         cluster = dataframe['CLUSTER'][i]
-        cubagem_linha = float(dataframe['CUB'][i].replace('.', ','))
+        cubagem_linha = float(dataframe['CUB'][i].replace(',', '.'))
         prioridade = dataframe['PRIORIDADE'][i]
         mercadoria = dataframe['MERCADORIA'][i]
         quantidade = int(dataframe['QTDE'][i])
