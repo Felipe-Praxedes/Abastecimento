@@ -66,7 +66,9 @@ def frotaDisponivel(df):
     print(df.head(3))
     print(df.columns)
 
-    qtde_frota_local = df.query("Tipo == 'Local' && m³ != 'Total'")
+    qtde_frota_local = df.query("Tipo == 'Local'")
+
+    qtde_frota_local = qtde_frota_local.query(f"{qtde_frota_local.columns[1]} != 'Total'")
 
     print(qtde_frota_local.columns)
 
