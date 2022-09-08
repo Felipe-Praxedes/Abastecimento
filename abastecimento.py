@@ -197,44 +197,24 @@ def tratarDados(df_carteira, df_fechamento, df_plano, df_suprimentos, df_ddeSupp
     return df_carteira
 
 
-def definiVariaveis(i, df):
-    cluster = df['CLUSTER'][i]
-    cubagem_linha = df['CUB'][i]
-    prioridade = df['PRIORIDADE'][i]
-    mercadoria = df['MERCADORIA'][i]
-    quantidade = df['QTDE'][i]
-    sinalizador_estoque = df['SINALIZADOR'][i]
-    loja = df['FILIAL DESTINO'][i]
-    dde_loja = ['QTD_FILIAL'][i]
-    tipo_item = df['TIPO ITEM'][i]
-    aging_pv = df['Aging DD'][i]
-    situacao_item = df['SITUACAO'][i]
-    rank_loja = df['RANK_FILIAL'][i]
-    rank_cluster = df['RANK_CLUSTER'][i]
+def preencherCargas(dataframe):
+    for i in dataframe.index:
+        cluster = dataframe['CLUSTER'][i]
+        cubagem_linha = float(dataframe['CUB'][i].replace('.', ','))
+        prioridade = dataframe['PRIORIDADE'][i]
+        mercadoria = dataframe['MERCADORIA'][i]
+        quantidade = int(dataframe['QTDE'][i])
+        cubagem_total = (cubagem_linha * quantidade)
+        sinalizador_estoque = dataframe['SINALIZADOR'][i]
+        loja = dataframe['FILIAL DESTINO'][i]
+        dde_loja = ['QTD_FILIAL'][i]
+        tipo_item = dataframe['TIPO ITEM'][i]
+        aging_pv = dataframe['Aging DD'][i]
+        situacao_item = dataframe['SITUACAO'][i]
+        rank_loja = dataframe['RANK_FILIAL'][i]
+        rank_cluster = dataframe['RANK_CLUSTER'][i]
 
-    return cluster, cubagem_linha, prioridade, mercadoria, quantidade, sinalizador_estoque, loja, dde_loja, tipo_item, \
-           aging_pv, situacao_item, rank_loja, rank_cluster
-
-
-def preencherCargas(df):
-    for i in df.index:
-        definiVariaveis(i, df)
-
-        # cluster = df['CLUSTER'][i]
-        # cubagem_linha = df['CUB'][i]
-        # prioridade = df['PRIORIDADE'][i]
-        # mercadoria = df['MERCADORIA'][i]
-        # quantidade = df['QTDE'][i]
-        # sinalizador_estoque = df['SINALIZADOR'][i]
-        # loja = df['FILIAL DESTINO'][i]
-        # dde_loja = ['QTD_FILIAL'][i]
-        # tipo_item = df['TIPO ITEM'][i]
-        # aging_pv = df['Aging DD'][i]
-        # situacao_item = df['SITUACAO'][i]
-        # rank_loja = df['RANK_FILIAL'][i]
-        # rank_cluster = df['RANK_CLUSTER'][i]
-
-    # print(cluster)
+    print(cluster)
 
 
 class Preencher_Carga:
