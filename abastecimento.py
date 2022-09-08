@@ -62,10 +62,18 @@ def frotaDisponivel(df):
     df = pd.DataFrame(l_data, columns=['Transportadora', 'Tipo', 'm³', 'Qtde'])
 
     df_veiculo = df  # Se quiser usar veiculo
-    df = pd.pivot_table(df, values=['Qtde'],
-                        index=['Tipo', 'm³'],
-                        aggfunc={'Qtde': np.sum},
-                        fill_value=0)
+    df = pd.DataFrame({'Qtde': df.groupby(['Tipo', 'm³'])['Qtde'].sum()}).reset_index()
+
+    print(df.head(3))
+    print(df.columns)
+
+    qtde_frota_local = df.query("Tipo == 'Local' && m³ != 'Total'")
+
+    print(qtde_frota_local.columns)
+
+    print(qtde_frota_local.head(3))
+
+    qtde_frota_local = sum(qtde_frota_local['Qtde'])
 
     return df
 
@@ -121,9 +129,6 @@ def fechamentoPlano(df_1):
     df_dia_semana = alterarTipo(df_dia_semana, altera_coluna)
 
     df_dia_semana.fillna(0, inplace=True)
-
-    print(df_dia_semana.columns)
-    print(df_dia_semana.head(3))
 
     return df_dia_semana
 
@@ -206,7 +211,7 @@ class Preencher_Carga:
 
         try:
             self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos, \
-            self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
+                self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
         except Exception as e:
             logger.error('Falha em obter base dados >> %s' % str(e))
             self.sair()
