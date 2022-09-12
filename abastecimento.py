@@ -233,9 +233,9 @@ def preencherCargas(dataframe):
             if dia_semana == "Sexta":
                 data_programacao = data_programacao + timedelta(days=4)
 
+        df_base_final = pd.Series([0, 0, 0], ['Cluster', 'Data Programação', 'Loja'])
 
-
-        print(cluster)
+        print(df_base_final)
 
 
 class Preencher_Carga:
@@ -296,6 +296,10 @@ class Preencher_Carga:
         df_carteira = tratarDados(df_carteira, df_fechamento, df_plano, df_suprimentos, df_ddeSupply)
 
         self.gerarSaida(df_carteira)
+
+        df_base_final = pd.read_csv(self.destino + 'Base_resultado.csv', sep=";", encoding='latin-1')
+
+        preencherCargas(df_base_final)
 
         fim = timeit.default_timer()
         logger.success('Finalizado... %ds' % (fim - self.inicio))
@@ -544,8 +548,6 @@ class Preencher_Carga:
                 break
             except Exception as e:
                 mb.showerror('Favor, fechar base de resultado.', 'Confirmar para tentar novamente.')
-
-        preencherCargas(df)
 
 
 if __name__ == '__main__':
