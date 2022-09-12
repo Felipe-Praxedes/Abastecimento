@@ -233,9 +233,11 @@ def preencherCargas(dataframe):
             if dia_semana == "Sexta":
                 data_programacao = data_programacao + timedelta(days=4)
 
-        df_base_final = pd.Series([0, 0, 0], ['Cluster', 'Data Programação', 'Loja'])
+        df_base_final = pd.Series(['Cluster', 'Data Programação', 'Loja'], [0, 0, 0])
 
         print(df_base_final)
+
+        print(df_base_final.columns)
 
 
 class Preencher_Carga:
