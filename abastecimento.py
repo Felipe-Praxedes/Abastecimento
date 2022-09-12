@@ -2,11 +2,13 @@ import locale
 import os
 import sys
 import timeit
-from datetime import date
+from datetime import date, timedelta
 from tkinter import messagebox as mb
 import numpy as np
 import pandas as pd
 from loguru import logger
+
+dias_da_semana = ("Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo")
 
 
 def definirPrioridade(df):
@@ -208,18 +210,21 @@ def preencherCargas(dataframe):
         cubagem_total = (cubagem_linha * quantidade)
         sinalizador_estoque = dataframe['SINALIZADOR'][i]
         loja = dataframe['FILIAL DESTINO'][i]
-        dde_loja = ['QTD_FILIAL'][i]
-        grupo_hora = ['GH'][i]
+        dde_loja = dataframe['QTD_FILIAL'][i]
+        grupo_hora = float(dataframe['GH'][i].replace(",", "."))
         tipo_item = dataframe['TIPO ITEM'][i]
         aging_pv = dataframe['Aging DD'][i]
         situacao_item = dataframe['SITUACAO'][i]
         rank_loja = dataframe['RANK_FILIAL'][i]
         rank_cluster = dataframe['RANK_CLUSTER'][i]
 
-        if grupo_hora == '1':
-            data_programacao = date.today()
+        if grupo_hora == 1.0:
+            data_programacao: date = date.today() + timedelta(days=6)
+            dia_semana: date = data_programacao.weekday()
+            data_programacao = data_programacao.strftime('%d/%m/%Y')
         else:
-            data_programacao = date.today() + 1
+            data_programacao: date = date.today() + timedelta(days=3)
+            data_programacao = data_programacao.strftime('%d/%m/%Y')
 
         print(cluster)
 
