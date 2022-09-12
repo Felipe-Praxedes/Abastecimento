@@ -219,12 +219,21 @@ def preencherCargas(dataframe):
         rank_cluster = dataframe['RANK_CLUSTER'][i]
 
         if grupo_hora == 1.0:
-            data_programacao: date = date.today() + timedelta(days=6)
-            dia_semana: date = data_programacao.weekday()
+            data_programacao: date = date.today() + timedelta(days=2)
+            dia_semana = data_programacao.weekday()
             data_programacao = data_programacao.strftime('%d/%m/%Y')
+            dia_semana = dias_da_semana[dia_semana]
+            if dia_semana == "Sexta":
+                data_programacao = data_programacao + timedelta(days=3)
         else:
             data_programacao: date = date.today() + timedelta(days=3)
+            dia_semana = data_programacao.weekday()
             data_programacao = data_programacao.strftime('%d/%m/%Y')
+            dia_semana = dias_da_semana[dia_semana]
+            if dia_semana == "Sexta":
+                data_programacao = data_programacao + timedelta(days=4)
+
+
 
         print(cluster)
 
