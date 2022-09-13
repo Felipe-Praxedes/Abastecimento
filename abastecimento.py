@@ -14,7 +14,7 @@ dias_da_semana = ("Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "
 def definirPrioridade(df):
     conditions = [
         (df['TIPO PEDIDO'].isin(['PV', 'RR'])),
-        (df['TIPO ENTRADA'].str.strip() == 'REQ.SUPPLY'),
+        (df['TIPO ENTRADA'].str.strip() == 'REQ.SUPPLY'),  # Falta incluir lista do Supply (
         (df['SETOR'].str.strip() == 'TELEFONIA CELULAR'),
         (df['SETOR'].str.strip().isin(['TVS', 'TABLETS', 'INFORMATICA'])),
         (df['SINALIZADOR'].isin(['0 - ESTOQUE ZERO', '1 - MUITO BAIXO'])),
@@ -199,45 +199,51 @@ def tratarDados(df_carteira, df_fechamento, df_plano, df_suprimentos, df_ddeSupp
     return df_carteira
 
 
+def defineLinhaCargaFinal():
+    dict_linha = {'Cluster': '01234SP', 'Data Programação': '01/02/2022', 'Loja': '1314'}
+    return dict_linha
+
+
 def preencherCargas(dataframe):
     for i in dataframe.index:
 
         cluster = dataframe['CLUSTER'][i]
-        cubagem_linha = float(dataframe['CUB'][i].replace(',', '.'))
-        prioridade = dataframe['PRIORIDADE'][i]
-        mercadoria = dataframe['MERCADORIA'][i]
-        quantidade = int(dataframe['QTDE'][i])
-        cubagem_total = (cubagem_linha * quantidade)
-        sinalizador_estoque = dataframe['SINALIZADOR'][i]
-        loja = dataframe['FILIAL DESTINO'][i]
-        dde_loja = dataframe['QTD_FILIAL'][i]
-        grupo_hora = float(dataframe['GH'][i].replace(",", "."))
-        tipo_item = dataframe['TIPO ITEM'][i]
-        aging_pv = dataframe['Aging DD'][i]
-        situacao_item = dataframe['SITUACAO'][i]
-        rank_loja = dataframe['RANK_FILIAL'][i]
-        rank_cluster = dataframe['RANK_CLUSTER'][i]
 
-        if grupo_hora == 1.0:
-            data_programacao: date = date.today() + timedelta(days=2)
-            dia_semana = data_programacao.weekday()
-            data_programacao = data_programacao.strftime('%d/%m/%Y')
-            dia_semana = dias_da_semana[dia_semana]
-            if dia_semana == "Sexta":
-                data_programacao = data_programacao + timedelta(days=3)
-        else:
-            data_programacao: date = date.today() + timedelta(days=3)
-            dia_semana = data_programacao.weekday()
-            data_programacao = data_programacao.strftime('%d/%m/%Y')
-            dia_semana = dias_da_semana[dia_semana]
-            if dia_semana == "Sexta":
-                data_programacao = data_programacao + timedelta(days=4)
+        df_cluster = dataframe[(dataframe['CLUSTER'] == cluster)].sort_values(by="FILIAL DESTINO")
 
-        df_base_final = pd.Series(['Cluster', 'Data Programação', 'Loja'], [0, 0, 0])
+        print(df_cluster)
 
-        print(df_base_final)
+        for r in df_cluster.index:
 
-        print(df_base_final.columns)
+            cubagem_linha = float(df_cluster['CUB'][r].replace(',', '.'))
+            prioridade = df_cluster['PRIORIDADE'][r]
+            mercadoria = df_cluster['MERCADORIA'][r]
+            quantidade = int(df_cluster['QTDE'][r])
+            cubagem_total = (cubagem_linha * quantidade)
+            sinalizador_estoque = df_cluster['SINALIZADOR'][r]
+            loja = df_cluster['FILIAL DESTINO'][r]
+            dde_loja = df_cluster['QTD_FILIAL'][r]
+            grupo_hora = float(df_cluster['GH'][r].replace(",", "."))
+            tipo_item = df_cluster['TIPO ITEM'][r]
+            aging_pv = df_cluster['Aging DD'][r]
+            situacao_item = df_cluster['SITUACAO'][r]
+            rank_loja = df_cluster['RANK_FILIAL'][r]
+            rank_cluster = df_cluster['RANK_CLUSTER'][r]
+
+            if grupo_hora == 1.0:
+                data_programacao: date = date.today() + timedelta(days=2)
+                dia_semana = data_programacao.weekday()
+                data_programacao = data_programacao.strftime('%d/%m/%Y')
+                dia_semana = dias_da_semana[dia_semana]
+                if dia_semana == "Sexta":
+                    data_programacao = data_programacao + timedelta(days=3)
+            else:
+                data_programacao: date = date.today() + timedelta(days=3)
+                dia_semana = data_programacao.weekday()
+                data_programacao = data_programacao.strftime('%d/%m/%Y')
+                dia_semana = dias_da_semana[dia_semana]
+                if dia_semana == "Sexta":
+                    data_programacao = data_programacao + timedelta(days=4)
 
 
 class Preencher_Carga:
@@ -270,7 +276,6 @@ class Preencher_Carga:
         except Exception as e:
             logger.warning('Falha em obter dados da Carteira >> %s' % str(e))
             self.sair()
-
         try:
             df_ddeSupply = self.estoqueLojaSupply()
         except Exception as e:
