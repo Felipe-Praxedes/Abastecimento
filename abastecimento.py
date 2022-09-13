@@ -4,11 +4,12 @@ import sys
 import timeit
 from datetime import date, timedelta
 from tkinter import messagebox as mb
+
 import numpy as np
 import pandas as pd
 from loguru import logger
 
-dias_da_semana = ("Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo")
+dias_da_semana = ("SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM")
 
 
 def definirPrioridade(df):
@@ -205,45 +206,47 @@ def defineLinhaCargaFinal():
 
 
 def preencherCargas(dataframe):
-    for i in dataframe.index:
+
+    data_programacao: date = date.today()
+    dia_semana = data_programacao.weekday()
+    dia_semana = dias_da_semana[dia_semana]
+
+    df_cluster_programacao = dataframe[dataframe['FECHAMENTO 1200'].str.contains(dia_semana)]
+
+    for i in df_cluster_programacao.index:
 
         cluster = dataframe['CLUSTER'][i]
 
         df_cluster = dataframe[(dataframe['CLUSTER'] == cluster)].sort_values(by="FILIAL DESTINO")
 
-        print(df_cluster)
-
         for r in df_cluster.index:
 
-            cubagem_linha = float(df_cluster['CUB'][r].replace(',', '.'))
-            prioridade = df_cluster['PRIORIDADE'][r]
-            mercadoria = df_cluster['MERCADORIA'][r]
-            quantidade = int(df_cluster['QTDE'][r])
-            cubagem_total = (cubagem_linha * quantidade)
-            sinalizador_estoque = df_cluster['SINALIZADOR'][r]
-            loja = df_cluster['FILIAL DESTINO'][r]
-            dde_loja = df_cluster['QTD_FILIAL'][r]
+            filial_atual = df_cluster['FILIAL DESTINO'][r]
             grupo_hora = float(df_cluster['GH'][r].replace(",", "."))
-            tipo_item = df_cluster['TIPO ITEM'][r]
-            aging_pv = df_cluster['Aging DD'][r]
-            situacao_item = df_cluster['SITUACAO'][r]
-            rank_loja = df_cluster['RANK_FILIAL'][r]
-            rank_cluster = df_cluster['RANK_CLUSTER'][r]
-
             if grupo_hora == 1.0:
-                data_programacao: date = date.today() + timedelta(days=2)
-                dia_semana = data_programacao.weekday()
-                data_programacao = data_programacao.strftime('%d/%m/%Y')
-                dia_semana = dias_da_semana[dia_semana]
-                if dia_semana == "Sexta":
-                    data_programacao = data_programacao + timedelta(days=3)
+                if dia_semana == "SEX":
+                    data_fechamento = data_programacao + timedelta(days=4)
+                    dia_fechamento = data_fechamento.weekday()
+                    dia_fechamento = dias_da_semana[dia_fechamento]
+                else:
+                    data_fechamento = data_programacao + timedelta(days=2)
+                    dia_fechamento = data_fechamento.weekday()
+                    dia_fechamento = dias_da_semana[dia_fechamento]
             else:
-                data_programacao: date = date.today() + timedelta(days=3)
-                dia_semana = data_programacao.weekday()
-                data_programacao = data_programacao.strftime('%d/%m/%Y')
-                dia_semana = dias_da_semana[dia_semana]
-                if dia_semana == "Sexta":
-                    data_programacao = data_programacao + timedelta(days=4)
+                if dia_semana == "SEX":
+                    data_fechamento = data_programacao + timedelta(days=5)
+                    dia_fechamento = data_fechamento.weekday()
+                    dia_fechamento = dias_da_semana[dia_fechamento]
+                else:
+                    data_fechamento = data_programacao + timedelta(days=3)
+                    dia_fechamento = data_fechamento.weekday()
+                    dia_fechamento = dias_da_semana[dia_fechamento]
+
+            qtd_lojas_cluster = df_cluster['FILIAL DESTINO'].nunique()
+            qtd_dinamicos_cluster = df_cluster['OBSERVAÇÃO'].nunique()
+
+            pass
+
 
 
 class Preencher_Carga:
