@@ -206,10 +206,11 @@ def defineLinhaCargaFinal():
 
 
 def preencherCargas(dataframe):
-
     data_programacao: date = date.today()
     dia_semana = data_programacao.weekday()
     dia_semana = dias_da_semana[dia_semana]
+
+    status_cluster = ""
 
     df_cluster_programacao = dataframe[dataframe['FECHAMENTO 1200'].str.contains(dia_semana)]
 
@@ -217,11 +218,24 @@ def preencherCargas(dataframe):
 
         cluster = dataframe['CLUSTER'][i]
 
-        df_cluster = dataframe[(dataframe['CLUSTER'] == cluster)].sort_values(by="FILIAL DESTINO")
+        df_cluster = dataframe[(dataframe['CLUSTER'] == cluster)].sort_values(by=["FILIAL DESTINO", "CUB"])
+        df_cluster = pd.DataFrame(df_cluster).reset_index().drop('index', 1)
+
+        lista_final = []
+        status_loja = ""
+        cubagem_somada = 0.0
 
         for r in df_cluster.index:
 
             filial_atual = df_cluster['FILIAL DESTINO'][r]
+
+            if r != 0:
+                if filial_atual != df_cluster['FILIAL DESTINO'][(r-1)]:
+                    status_loja = ""
+                elif status_loja != "":
+                    break
+
+            # validação de filial para concluir ou nao no loop
             grupo_hora = float(df_cluster['GH'][r].replace(",", "."))
             if grupo_hora == 1.0:
                 if dia_semana == "SEX":
@@ -242,11 +256,27 @@ def preencherCargas(dataframe):
                     dia_fechamento = data_fechamento.weekday()
                     dia_fechamento = dias_da_semana[dia_fechamento]
 
-            qtd_lojas_cluster = df_cluster['FILIAL DESTINO'].nunique()
-            qtd_dinamicos_cluster = df_cluster['OBSERVAÇÃO'].nunique()
+            cub_total_fechamento = float(df_cluster[f'CUB {dia_fechamento}'][r].replace(",", "."))
+            cubagem_sku = float(df_cluster['CUB'][r].replace(",", "."))
 
-            pass
+            if cubagem_somada <= cub_total_fechamento:
+                cubagem_somada = cubagem_somada + cubagem_sku
+            else:
+                status_loja = 'PREENCHIDO'
 
+            # parametros que serão utilizados para os critérios mais minuciosos do preenchimento dos clusters
+
+            # qtd_lojas_cluster = int(df_cluster['FILIAL DESTINO'].nunique())
+            # qtd_dinamicos_cluster = int(df_cluster['OBSERVAÇÃO'].nunique())
+            # cub_veiculo_plano = df_cluster['VEICULO PLANO'].unique()
+            # tamanho = cub_veiculo_plano.size
+            # index = tamanho - 1
+            # cub_veiculo_plano = cub_veiculo_plano[index][0:2]
+            # cub_veiculo_plano = int(cub_veiculo_plano)
+            # total_cub_carros_plano = (cub_veiculo_plano * qtd_dinamicos_cluster)
+            # cub_final_por_loja = float((total_cub_carros_plano/qtd_lojas_cluster))
+
+            # Projeto em versão BETA em testes, variáveis acima não estão sendo utilizadas no momento.
 
 
 class Preencher_Carga:
