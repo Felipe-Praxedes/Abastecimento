@@ -212,7 +212,7 @@ def preencherCargas(dataframe):
 
     status_cluster = ""
 
-    df_cluster_programacao = dataframe[dataframe['FECHAMENTO 1200'].str.contains(dia_semana)]
+    df_cluster_programacao = dataframe[dataframe['FECHAMENTO 1200'].str.contains(dia_semana)].reset_index().drop('index', 1)
 
     for i in df_cluster_programacao.index:
 
@@ -233,9 +233,11 @@ def preencherCargas(dataframe):
                 if filial_atual != df_cluster['FILIAL DESTINO'][(r-1)]:
                     status_loja = ""
                 elif status_loja != "":
-                    break
+                    pass
+                else:
+                    pass
 
-            # validação de filial para concluir ou nao no loop
+                # validação de filial para concluir ou nao no loop
             grupo_hora = float(df_cluster['GH'][r].replace(",", "."))
             if grupo_hora == 1.0:
                 if dia_semana == "SEX":
@@ -258,9 +260,13 @@ def preencherCargas(dataframe):
 
             cub_total_fechamento = float(df_cluster[f'CUB {dia_fechamento}'][r].replace(",", "."))
             cubagem_sku = float(df_cluster['CUB'][r].replace(",", "."))
+            cluster_atual = df_cluster['CLUSTER'][r]
 
             if cubagem_somada <= cub_total_fechamento:
-                cubagem_somada = cubagem_somada + cubagem_sku
+                if cubagem_somada + cubagem_sku > cub_total_fechamento:
+                    status_loja = 'PREENCHIDO'
+                else:
+                    cubagem_somada = cubagem_somada + cubagem_sku
             else:
                 status_loja = 'PREENCHIDO'
 
