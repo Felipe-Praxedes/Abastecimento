@@ -212,7 +212,8 @@ def preencherCargas(dataframe):
 
     status_cluster = ""
 
-    df_cluster_programacao = dataframe[dataframe['FECHAMENTO 1200'].str.contains(dia_semana)].reset_index().drop('index', 1)
+    df_cluster_programacao = dataframe[dataframe['FECHAMENTO 1200'].str.contains(dia_semana)].reset_index().drop(
+        'index', 1)
 
     for i in df_cluster_programacao.index:
 
@@ -230,7 +231,7 @@ def preencherCargas(dataframe):
             filial_atual = df_cluster['FILIAL DESTINO'][r]
 
             if r != 0:
-                if filial_atual != df_cluster['FILIAL DESTINO'][(r-1)]:
+                if filial_atual != df_cluster['FILIAL DESTINO'][(r - 1)]:
                     status_loja = ""
                 elif status_loja != "":
                     pass
@@ -273,6 +274,11 @@ def preencherCargas(dataframe):
                     status_loja = 'PREENCHIDO'
                 else:
                     cubagem_somada = cubagem_somada + cubagem_sku
+                    lista_final.append(
+                        {"CLUSTER": cluster_atual, "FILIAL": filial_atual, "DT CG PONTO": data_fechamento,
+                         "Nº CG PONTO": num_carga_ponto, "SKU": sku, "DESC SKU": desc_sku, "QTDE": qtde_sku,
+                         "AÇÃO": "A definir", "PRIORIDADE": prioridade, "CUBAGEM": cubagem_sku, "CUSTO": valor_sku,
+                         "DATA ENTREGA": "A definir"})
             else:
                 status_loja = 'PREENCHIDO'
 
@@ -303,7 +309,7 @@ class Preencher_Carga:
 
         try:
             self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos, \
-                self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
+            self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
         except Exception as e:
             logger.error('Falha em obter base dados >> %s' % str(e))
             self.sair()
