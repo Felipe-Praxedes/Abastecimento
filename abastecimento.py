@@ -211,6 +211,7 @@ def preencherCargas(dataframe):
     dia_semana = dias_da_semana[dia_semana]
 
     status_cluster = ""
+    lista_final = []
 
     df_cluster_programacao = dataframe[dataframe['FECHAMENTO 1200'].str.contains(dia_semana)].reset_index().drop(
         'index', 1)
@@ -219,82 +220,90 @@ def preencherCargas(dataframe):
 
         cluster = dataframe['CLUSTER'][i]
 
-        df_cluster = dataframe[(dataframe['CLUSTER'] == cluster)].sort_values(by=["FILIAL DESTINO", "CUB"])
-        df_cluster = pd.DataFrame(df_cluster).reset_index().drop('index', 1)
+        if i != 0:
+            if cluster != dataframe['CLUSTER'][(i-1)]:
+                status_cluster = ""
+                cubagem_cluster_final = 0.0
 
-        lista_final = []
-        status_loja = ""
-        cubagem_somada = 0.0
+        if status_cluster == "":
+            df_cluster = dataframe[(dataframe['CLUSTER'] == cluster)].sort_values(by=["FILIAL DESTINO", "CUB"])
+            df_cluster = pd.DataFrame(df_cluster).reset_index().drop('index', 1)
 
-        for r in df_cluster.index:
+            status_loja = ""
+            cubagem_somada = 0.0
+            cubagem_cluster_final = 0.0
 
-            filial_atual = df_cluster['FILIAL DESTINO'][r]
+            for r in df_cluster.index:
 
-            if r != 0:
-                if filial_atual != df_cluster['FILIAL DESTINO'][(r - 1)]:
-                    status_loja = ""
-                elif status_loja != "":
-                    pass
-                else:
-                    pass
+                qtde_linhas = len(df_cluster.index)-1
+                filial_atual = df_cluster['FILIAL DESTINO'][r]
 
-            # validação de filial para concluir ou nao no loop
-            grupo_hora = float(df_cluster['GH'][r].replace(",", "."))
-            if grupo_hora == 1.0:
-                if dia_semana == "SEX":
-                    data_fechamento = data_programacao + timedelta(days=4)
-                    dia_fechamento = data_fechamento.weekday()
-                    dia_fechamento = dias_da_semana[dia_fechamento]
-                else:
-                    data_fechamento = data_programacao + timedelta(days=2)
-                    dia_fechamento = data_fechamento.weekday()
-                    dia_fechamento = dias_da_semana[dia_fechamento]
-            else:
-                if dia_semana == "SEX":
-                    data_fechamento = data_programacao + timedelta(days=5)
-                    dia_fechamento = data_fechamento.weekday()
-                    dia_fechamento = dias_da_semana[dia_fechamento]
-                else:
-                    data_fechamento = data_programacao + timedelta(days=3)
-                    dia_fechamento = data_fechamento.weekday()
-                    dia_fechamento = dias_da_semana[dia_fechamento]
+                if r != 0:
+                    if filial_atual != df_cluster['FILIAL DESTINO'][(r - 1)]:
+                        cubagem_cluster_final = cubagem_cluster_final + cubagem_somada
+                        status_loja = ""
+                        cubagem_somada = 0.0
+                    elif r == qtde_linhas:
+                        status_cluster = "COMPLETO"
+                        cubagem_cluster_final = cubagem_cluster_final + cubagem_somada
 
-            cub_total_fechamento = float(df_cluster[f'CUB {dia_fechamento}'][r].replace(",", "."))
-            cubagem_sku = float(df_cluster['CUB'][r].replace(",", "."))
-            cluster_atual = df_cluster['CLUSTER'][r]
-            sku = df_cluster['MERCADORIA'][r]
-            desc_sku = df_cluster['DESCRICAO'][r]
-            qtde_sku = df_cluster['QTDE'][r]
-            valor_sku = df_cluster['CUSTO'][r]
-            prioridade = df_cluster['PRIORIDADE'][r]
-            num_carga_ponto = df_cluster['CARGA PTO'][r]
+                if status_loja == "":
+                    grupo_hora = float(df_cluster['GH'][r].replace(",", "."))
+                    if grupo_hora == 1.0:
+                        if dia_semana == "SEX":
+                            data_fechamento = data_programacao + timedelta(days=4)
+                            dia_fechamento = data_fechamento.weekday()
+                            dia_fechamento = dias_da_semana[dia_fechamento]
+                        else:
+                            data_fechamento = data_programacao + timedelta(days=2)
+                            dia_fechamento = data_fechamento.weekday()
+                            dia_fechamento = dias_da_semana[dia_fechamento]
+                    else:
+                        if dia_semana == "SEX":
+                            data_fechamento = data_programacao + timedelta(days=5)
+                            dia_fechamento = data_fechamento.weekday()
+                            dia_fechamento = dias_da_semana[dia_fechamento]
+                        else:
+                            data_fechamento = data_programacao + timedelta(days=3)
+                            dia_fechamento = data_fechamento.weekday()
+                            dia_fechamento = dias_da_semana[dia_fechamento]
 
-            if cubagem_somada <= cub_total_fechamento:
-                if cubagem_somada + cubagem_sku > cub_total_fechamento:
-                    status_loja = 'PREENCHIDO'
-                else:
-                    cubagem_somada = cubagem_somada + cubagem_sku
-                    lista_final.append(
-                        {"CLUSTER": cluster_atual, "FILIAL": filial_atual, "DT CG PONTO": data_fechamento,
-                         "Nº CG PONTO": num_carga_ponto, "SKU": sku, "DESC SKU": desc_sku, "QTDE": qtde_sku,
-                         "AÇÃO": "A definir", "PRIORIDADE": prioridade, "CUBAGEM": cubagem_sku, "CUSTO": valor_sku,
-                         "DATA ENTREGA": "A definir"})
-            else:
-                status_loja = 'PREENCHIDO'
+                    cub_total_fechamento = float(df_cluster[f'CUB {dia_fechamento}'][r].replace(",", "."))
+                    cubagem_sku = float(df_cluster['CUB'][r].replace(",", "."))
+                    cluster_atual = df_cluster['CLUSTER'][r]
+                    sku = df_cluster['MERCADORIA'][r]
+                    desc_sku = df_cluster['DESCRICAO'][r]
+                    qtde_sku = df_cluster['QTDE'][r]
+                    valor_sku = df_cluster['CUSTO'][r]
+                    prioridade = df_cluster['PRIORIDADE'][r]
+                    num_carga_ponto = df_cluster['CARGA PTO'][r]
 
-            # parametros que serão utilizados para os critérios mais minuciosos do preenchimento dos clusters
+                    if cubagem_somada <= cub_total_fechamento:
+                        if cubagem_somada + cubagem_sku > cub_total_fechamento:
+                            status_loja = 'PREENCHIDO'
+                        else:
+                            cubagem_somada = cubagem_somada + cubagem_sku
+                            lista_final.append(
+                                {"CLUSTER": cluster_atual, "FILIAL": filial_atual, "DT CG PONTO": data_fechamento,
+                                 "Nº CG PONTO": num_carga_ponto, "SKU": sku, "DESC SKU": desc_sku, "QTDE": qtde_sku,
+                                 "AÇÃO": "A definir", "PRIORIDADE": prioridade, "CUBAGEM": cubagem_sku, "CUSTO": valor_sku,
+                                 "DATA ENTREGA": "A definir"})
+                    else:
+                        status_loja = 'PREENCHIDO'
 
-            # qtd_lojas_cluster = int(df_cluster['FILIAL DESTINO'].nunique())
-            # qtd_dinamicos_cluster = int(df_cluster['OBSERVAÇÃO'].nunique())
-            # cub_veiculo_plano = df_cluster['VEICULO PLANO'].unique()
-            # tamanho = cub_veiculo_plano.size
-            # index = tamanho - 1
-            # cub_veiculo_plano = cub_veiculo_plano[index][0:2]
-            # cub_veiculo_plano = int(cub_veiculo_plano)
-            # total_cub_carros_plano = (cub_veiculo_plano * qtd_dinamicos_cluster)
-            # cub_final_por_loja = float((total_cub_carros_plano/qtd_lojas_cluster))
+                # parametros que serão utilizados para os critérios mais minuciosos do preenchimento dos clusters
 
-            # Projeto em versão BETA em testes, variáveis acima não estão sendo utilizadas no momento.
+                # qtd_lojas_cluster = int(df_cluster['FILIAL DESTINO'].nunique())
+                # qtd_dinamicos_cluster = int(df_cluster['OBSERVAÇÃO'].nunique())
+                # cub_veiculo_plano = df_cluster['VEICULO PLANO'].unique()
+                # tamanho = cub_veiculo_plano.size
+                # index = tamanho - 1
+                # cub_veiculo_plano = cub_veiculo_plano[index][0:2]
+                # cub_veiculo_plano = int(cub_veiculo_plano)
+                # total_cub_carros_plano = (cub_veiculo_plano * qtd_dinamicos_cluster)
+                # cub_final_por_loja = float((total_cub_carros_plano/qtd_lojas_cluster))
+
+                # Projeto em versão BETA em testes, variáveis acima não estão sendo utilizadas no momento.
 
 
 class Preencher_Carga:
@@ -309,7 +318,7 @@ class Preencher_Carga:
 
         try:
             self.carteira, self.fechamento, self.frota, self.lista, self.suprimentos, \
-            self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
+                self.ddeSupply = self.listarBases(self.bases, self.nomeArquivo)
         except Exception as e:
             logger.error('Falha em obter base dados >> %s' % str(e))
             self.sair()
