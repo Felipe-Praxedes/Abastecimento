@@ -292,6 +292,7 @@ def preencherCargas(dataframe, destino):
                         status_loja = 'PREENCHIDO'
 
     df_base_final = pd.DataFrame(lista_final)
+    df_base_final['CUBAGEM'] = df_base_final['CUBAGEM'].str.replace(".", ",", regex=True)
     df_base_final.to_csv(destino + 'Lista_clusters_preenchidos.csv', index=False, sep=";", encoding='latin-1')
 
     # parametros que serão utilizados para os critérios mais minuciosos do preenchimento dos clusters (acima da saida)
