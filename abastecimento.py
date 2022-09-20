@@ -205,7 +205,7 @@ def defineLinhaCargaFinal():
     return dict_linha
 
 
-def preencherCargas(dataframe):
+def preencherCargas(dataframe, destino):
     data_programacao: date = date.today()
     dia_semana = data_programacao.weekday()
     dia_semana = dias_da_semana[dia_semana]
@@ -291,19 +291,22 @@ def preencherCargas(dataframe):
                     else:
                         status_loja = 'PREENCHIDO'
 
-                # parametros que serão utilizados para os critérios mais minuciosos do preenchimento dos clusters
+    df_base_final = pd.DataFrame(lista_final)
+    df_base_final.to_csv(destino + 'Lista_clusters_preenchidos.csv', index=False, sep=";", encoding='latin-1')
 
-                # qtd_lojas_cluster = int(df_cluster['FILIAL DESTINO'].nunique())
-                # qtd_dinamicos_cluster = int(df_cluster['OBSERVAÇÃO'].nunique())
-                # cub_veiculo_plano = df_cluster['VEICULO PLANO'].unique()
-                # tamanho = cub_veiculo_plano.size
-                # index = tamanho - 1
-                # cub_veiculo_plano = cub_veiculo_plano[index][0:2]
-                # cub_veiculo_plano = int(cub_veiculo_plano)
-                # total_cub_carros_plano = (cub_veiculo_plano * qtd_dinamicos_cluster)
-                # cub_final_por_loja = float((total_cub_carros_plano/qtd_lojas_cluster))
+    # parametros que serão utilizados para os critérios mais minuciosos do preenchimento dos clusters (acima da saida)
 
-                # Projeto em versão BETA em testes, variáveis acima não estão sendo utilizadas no momento.
+    # qtd_lojas_cluster = int(df_cluster['FILIAL DESTINO'].nunique())
+    # qtd_dinamicos_cluster = int(df_cluster['OBSERVAÇÃO'].nunique())
+    # cub_veiculo_plano = df_cluster['VEICULO PLANO'].unique()
+    # tamanho = cub_veiculo_plano.size
+    # index = tamanho - 1
+    # cub_veiculo_plano = cub_veiculo_plano[index][0:2]
+    # cub_veiculo_plano = int(cub_veiculo_plano)
+    # total_cub_carros_plano = (cub_veiculo_plano * qtd_dinamicos_cluster)
+    # cub_final_por_loja = float((total_cub_carros_plano/qtd_lojas_cluster))
+
+    # Projeto em versão BETA em testes, variáveis acima não estão sendo utilizadas no momento.
 
 
 class Preencher_Carga:
@@ -366,7 +369,7 @@ class Preencher_Carga:
 
         df_base_final = pd.read_csv(self.destino + 'Base_resultado.csv', sep=";", encoding='latin-1')
 
-        preencherCargas(df_base_final)
+        preencherCargas(df_base_final, self.destino)
 
         fim = timeit.default_timer()
         logger.success('Finalizado... %ds' % (fim - self.inicio))
