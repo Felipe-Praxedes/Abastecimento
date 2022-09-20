@@ -287,7 +287,7 @@ def preencherCargas(dataframe):
                                 {"CLUSTER": cluster_atual, "FILIAL": filial_atual, "DT CG PONTO": data_fechamento,
                                  "Nº CG PONTO": num_carga_ponto, "SKU": sku, "DESC SKU": desc_sku, "QTDE": qtde_sku,
                                  "AÇÃO": "A definir", "PRIORIDADE": prioridade, "CUBAGEM": cubagem_sku, "CUSTO": valor_sku,
-                                 "DATA ENTREGA": "A definir"})
+                                 "DATA ENTREGA": "A definir", "MOTIVO": "A definir"})
                     else:
                         status_loja = 'PREENCHIDO'
 
