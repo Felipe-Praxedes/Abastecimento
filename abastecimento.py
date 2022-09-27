@@ -258,7 +258,7 @@ def preencherCargas(dataframe, destino):
                             data_fechamento = data_programacao + timedelta(days=2)
                             dia_fechamento = data_fechamento.weekday()
                             dia_fechamento = dias_da_semana[dia_fechamento]
-                    else:
+                    elif grupo_hora == 14.0:
                         if dia_semana == "SEX":
                             data_fechamento = data_programacao + timedelta(days=5)
                             dia_fechamento = data_fechamento.weekday()
@@ -267,6 +267,9 @@ def preencherCargas(dataframe, destino):
                             data_fechamento = data_programacao + timedelta(days=3)
                             dia_fechamento = data_fechamento.weekday()
                             dia_fechamento = dias_da_semana[dia_fechamento]
+                    else:
+                        status_cluster = 'SEM CLUSTER'
+                        break
 
                     cub_total_fechamento = float(df_cluster[f'CUB {dia_fechamento}'][r].replace(",", "."))
                     cubagem_sku = float(df_cluster['CUB'][r].replace(",", "."))
@@ -292,7 +295,8 @@ def preencherCargas(dataframe, destino):
                         status_loja = 'PREENCHIDO'
 
     df_base_final = pd.DataFrame(lista_final)
-    df_base_final['CUBAGEM'] = df_base_final['CUBAGEM'].str.replace(".", ",", regex=True)
+    df_base_final['CUBAGEM'] = df_base_final['CUBAGEM'].astype(str)
+    df_base_final['CUBAGEM'] = df_base_final['CUBAGEM'].str.replace(".", ',')
     df_base_final.to_csv(destino + 'Lista_clusters_preenchidos.csv', index=False, sep=";", encoding='latin-1')
 
     # parametros que serão utilizados para os critérios mais minuciosos do preenchimento dos clusters (acima da saida)
